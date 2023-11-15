@@ -7,7 +7,14 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    vue(), nodePolyfills()
+    vue({
+      template: {
+        compilerOptions: {
+          isCustomElement: (tag) => ['qr-code'].includes(tag),
+        }
+      }
+    }),
+    nodePolyfills()
   ],
   esbuild: {
     supported: {

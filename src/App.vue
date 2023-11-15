@@ -1,15 +1,14 @@
 <script setup lang="ts">
-  import { ref, onMounted } from 'vue'
-  import { TestNetWallet, BaseWallet,BalanceResponse  } from "mainnet-js"
-  import IndexedDBProvider from "@mainnet-cash/indexeddb-storage"
+  import bchWalletView from "./components/bchWallet.vue"
   import HelloWorld from './components/HelloWorld.vue'
+  import { ref, onMounted } from 'vue'
+  import { TestNetWallet, BaseWallet, BalanceResponse } from "mainnet-js"
 
   // reactive state
-  const wallet = ref(null as (TestNetWallet | null)) 
+  const wallet = ref(null as (TestNetWallet | null));
   const balance = ref(0 as (number | undefined));
   const nrTokenCategories = ref(0 as (number | undefined));
 
-  // functions that mutate state and trigger updates
   onMounted(async()=>{
     //BaseWallet.StorageProvider = IndexedDBProvider ;
     wallet.value = await TestNetWallet.fromSeed("", "m/44'/0'/0'/0/0") as TestNetWallet;
@@ -28,21 +27,11 @@
     <div class="wrapper">
       <HelloWorld msg="Cashonize-Vue" />
     </div>
-    <br>
-    <div>
-      BCH balance:  
-      <span style="color: hsla(160, 100%, 37%, 1);">
-        {{ balance ? balance + " sats" : "" }}
-      </span>
-    </div>
-    <div>
-      Wallet token balance: 
-      <span style="color: hsla(160, 100%, 37%, 1);">
-        {{ nrTokenCategories ? nrTokenCategories + " different token categories" : ""}}
-      </span>
-    </div>
-    <div> {{ wallet?.address ?? "" }} </div>
-    <div> {{ wallet?.tokenaddr ?? "" }} </div>
+    <nav style="display: flex; margin: 20px 0px;">
+      <div style="padding: 0px 10px;">BchWallet</div>
+      <div style="padding: 0px 10px;">MyTokens</div>
+    </nav>
+    <bchWalletView :wallet="(wallet as TestNetWallet)" :balance="balance" :nrTokenCategories="nrTokenCategories"/>
   </main>
 </template>
 

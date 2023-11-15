@@ -12,6 +12,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@bitjson/qr-code": "^1.0.2",
     "@mainnet-cash/indexeddb-storage": "^2.2.7",
     "mainnet-js": "^2.2.7",
     "vue": "^3.3.4"
