@@ -1,19 +1,30 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
-import TheWelcome from './components/TheWelcome.vue'
+  import { ref, onMounted } from 'vue'
+  import { Wallet } from "mainnet-js"
+  import HelloWorld from './components/HelloWorld.vue'
+
+  // reactive state
+  const wallet = ref(null as (Wallet | null)) 
+
+  // functions that mutate state and trigger updates
+  onMounted(async()=>{
+    wallet.value = await Wallet.newRandom() as Wallet;
+  })
 </script>
 
 <template>
   <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-    </div>
+    
   </header>
 
   <main>
-    <TheWelcome />
+    <div class="wrapper">
+      <HelloWorld msg="Vue + Typescript + mainnet-js" />
+    </div>
+    <br>
+    <div> {{ wallet?.address ?? "" }} </div>
+    <br>
+    <div> {{ wallet?.tokenaddr ?? "" }} </div>
   </main>
 </template>
 
