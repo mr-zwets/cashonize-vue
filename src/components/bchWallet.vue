@@ -1,10 +1,10 @@
 <script setup lang="ts">
   import { ref, onMounted } from 'vue'
-  import { TestNetWallet  } from "mainnet-js"
+  import { Wallet, TestNetWallet  } from "mainnet-js"
   import { defineCustomElements } from '@bitjson/qr-code';
 
   const { wallet, balance, nrTokenCategories, network } = defineProps<{
-    wallet: TestNetWallet | null,
+    wallet: Wallet | TestNetWallet | null,
     balance?: number,
     nrTokenCategories?: number,
     network: ("mainnet" | "chipnet");
@@ -24,9 +24,9 @@
   function switchAddressTypeQr(){
     displayeBchQr.value = !displayeBchQr.value;
   }
-  async function maxSendAmount(){
+  async function maxSendAmount(wallet: TestNetWallet | null){
     try{
-      if(!wallet) return;
+      if(!wallet) return
       const maxAmountToSend = await wallet.getMaxAmountToSend();
       if(!maxAmountToSend.sat) throw("expected a number")
       sendAmount.value = maxAmountToSend.sat;
@@ -34,7 +34,7 @@
       console.log(error)
     }
   }
-  async function sendBch(){
+  async function sendBch(wallet: TestNetWallet | null){
     try{
       if(!wallet) return;
       const { txId } = await wallet.send([{ cashaddr: sendAddr.value, value: sendAmount.value, unit: "sat" }]);
@@ -81,9 +81,9 @@
           <input v-model="sendAmount" id="sendAmount" type="text" placeholder="amount">
           <i id="sendUnit" style="color: black;">BCH</i>
         </span>
-        <button @click="maxSendAmount()" style="color: black;">max</button>
+        <button @click="maxSendAmount(wallet)" style="color: black;">max</button>
       </span>
     </div>
-    <input @click="sendBch()" type="button" class="primaryButton" id="send" value="Send">
+    <input @click="sendBch(wallet)" type="button" class="primaryButton" id="send" value="Send">
   </fieldset>
 </template>

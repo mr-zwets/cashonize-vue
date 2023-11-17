@@ -24,6 +24,13 @@ a,
   background-color: var(--color-primary); 
   color: white;
 }
+.icon {
+  vertical-align: text-bottom;
+}
+.tokenButton {
+  margin-left: 40px;
+  cursor: pointer;
+}
 
 @media (hover: hover) {
   a:hover {
