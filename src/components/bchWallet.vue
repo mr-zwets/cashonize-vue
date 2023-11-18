@@ -1,13 +1,15 @@
 <script setup lang="ts">
-  import { ref, onMounted } from 'vue'
+  import { ref, toRefs } from 'vue'
   import { Wallet, TestNetWallet, BalanceResponse  } from "mainnet-js"
   import { defineCustomElements } from '@bitjson/qr-code';
 
-  const { wallet, balance, nrTokenCategories } = defineProps<{
+  const props = defineProps<{
     wallet: Wallet | TestNetWallet | null,
     balance?: BalanceResponse,
+    maxAmountToSend?: BalanceResponse | undefined,
     nrTokenCategories?: number,
   }>()
+  const { wallet, balance, maxAmountToSend, nrTokenCategories } = toRefs(props);
 
   defineCustomElements(window);
 
@@ -18,17 +20,15 @@
 
   const explorerUrlMainnet = "https://explorer.bitcoinunlimited.info";
   const explorerUrlChipnet = "https://chipnet.chaingraph.cash";
-  let explorerUrl = (wallet?.network == "mainnet")? explorerUrlMainnet : explorerUrlChipnet;
+  let explorerUrl = (wallet.value?.network == "mainnet")? explorerUrlMainnet : explorerUrlChipnet;
 
   function switchAddressTypeQr(){
     displayeBchQr.value = !displayeBchQr.value;
   }
-  async function getMaxBchAmount(wallet: TestNetWallet | null){
+  async function useMaxBchAmount(){
     try{
-      if(!wallet) return
-      const maxAmountToSend = await wallet.getMaxAmountToSend();
-      if(!maxAmountToSend.sat) throw("expected a number")
-      bchSendAmount.value = maxAmountToSend.sat;
+      if(!maxAmountToSend?.value?.sat) throw("expected a number");
+      bchSendAmount.value = maxAmountToSend.value.sat;
     } catch(error) {
       console.log(error)
     }
@@ -65,7 +65,7 @@
     </div>
     <div> {{ wallet?.address ?? "" }} </div>
     <div> {{ wallet?.tokenaddr ?? "" }} </div>
-    <qr-code id="qrCode" :contents="displayeBchQr? wallet?.address : wallet?.tokenaddr" style="width: 240px; margin: 5px auto 0 auto;">
+    <qr-code id="qrCode" :contents="displayeBchQr? wallet?.address : wallet?.tokenaddr" style="display: block; width: 240px; height: 240px; margin: 5px auto 0 auto;">
       <img :src="displayeBchQr? 'images/bch-icon.png':'images/tokenicon.png'" slot="icon" /> <!-- eslint-disable-line -->
     </qr-code>
     <div style="text-align: center;">
@@ -83,7 +83,7 @@
           <input v-model="bchSendAmount" id="sendAmount" type="text" placeholder="amount">
           <i id="sendUnit" style="color: black;">BCH</i>
         </span>
-        <button @click="getMaxBchAmount(wallet)" style="color: black;">max</button>
+        <button @click="useMaxBchAmount()" style="color: black;">max</button>
       </span>
     </div>
     <input @click="sendBch(wallet)" type="button" class="primaryButton" id="send" value="Send">

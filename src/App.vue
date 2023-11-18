@@ -1,11 +1,11 @@
 <script setup lang="ts">
+  import newWalletView from "./components/newWallet.vue"
   import bchWalletView from "./components/bchWallet.vue"
   import myTokensView from "./components/myTokens.vue"
   import settingsMenu from './components/settingsMenu.vue'
   import HelloWorld from './components/HelloWorld.vue'
-  import { ref, onMounted, provide } from 'vue'
-  import { Wallet, TestNetWallet, BaseWallet, BalanceResponse, BCMR } from "mainnet-js"
-  import { IndexedDBProvider } from "@mainnet-cash/indexeddb-storage"
+  import { ref } from 'vue'
+  import { Wallet, TestNetWallet, BalanceResponse, BCMR } from "mainnet-js"
 
   interface TokenData{
     tokenId: string,
@@ -17,46 +17,46 @@
   const defaultBcmrIndexer = "https://bcmr.paytaca.com/api";
 
   // reactive state
-  const wallet = ref(null as (TestNetWallet | null));
+  const wallet = ref(null as (Wallet |TestNetWallet | null));
   const network = ref("chipnet" as ("mainnet" | "chipnet"));
   const balance = ref(undefined as (BalanceResponse | undefined));
+  const maxAmountToSend = ref(undefined as (BalanceResponse | undefined));
   const nrTokenCategories = ref(0 as (number | undefined));
   const tokenList = ref(null as (Array<TokenData> | null));
-  const displayView = ref(1);
+  const displayView = ref(undefined as (number | undefined));
   const chaingraph = ref(defaultChaingraph);
   const ipfsGateway = ref(dafaultIpfsGateway);
   const bcmrIndexer = ref(defaultBcmrIndexer);
   const bcmrRegistries = ref([] as any[]);
 
-  // provide bcmrRegistries so component can watch changes
-  provide('bcmrRegistries', bcmrRegistries);
-
   function changeView(newView: number){
     displayView.value = newView;
   }
 
-  onMounted(async()=>{
-    // @ts-ignore
-    BaseWallet.StorageProvider = IndexedDBProvider;
-    const walletClass = (network.value == "mainnet") ? Wallet: TestNetWallet;
-    const seedphrase = "";
-    wallet.value = await walletClass.fromSeed(seedphrase, "m/44'/0'/0'/0/0") as TestNetWallet;
-    const walletBalance = await wallet.value.getBalance() as BalanceResponse;
-    const getFungibleTokensResponse = await wallet.value.getAllTokenBalances();
-    const getNFTsResponse = await wallet.value.getAllNftTokenBalances();
-    let tokenCategories = Object.keys({...getFungibleTokensResponse, ...getNFTsResponse})
+  async function setWallet(newWallet: TestNetWallet){
+    changeView(1);
+    wallet.value = newWallet;
+    console.time('Balance Promises');
+    const promiseWalletBalance = wallet.value.getBalance() as BalanceResponse;
+    const promiseMaxAmountToSend =await wallet.value.getMaxAmountToSend();
+    const promiseGetFungibleTokens = wallet.value.getAllTokenBalances();
+    const promiseGetNFTs = wallet.value.getAllNftTokenBalances();
+    const balancePromises: any[] = [promiseWalletBalance, promiseGetFungibleTokens, promiseGetNFTs,promiseMaxAmountToSend];
+    const [resultWalletBalance, resultGetFungibleTokens, resultGetNFTs, resultMaxAmountToSend] = await Promise.all(balancePromises);
+    console.timeEnd('Balance Promises');
+    let tokenCategories = Object.keys({...resultGetFungibleTokens, ...resultGetNFTs})
     const arrayTokens = [];
-    for (const tokenId of Object.keys(getFungibleTokensResponse)) {
-      arrayTokens.push({ tokenId, amount: getFungibleTokensResponse[tokenId] });
+    for (const tokenId of Object.keys(resultGetFungibleTokens)) {
+      arrayTokens.push({ tokenId, amount: resultGetFungibleTokens[tokenId] });
     }
-    // update state
-    balance.value = walletBalance;
+    balance.value = resultWalletBalance;
     nrTokenCategories.value = tokenCategories.length;
     tokenList.value = arrayTokens;
+    maxAmountToSend.value = resultMaxAmountToSend;
     setUpWalletSubscriptions();
-    await importRegistries( Object.keys({...getFungibleTokensResponse}));
+    await importRegistries( Object.keys({...resultGetFungibleTokens}));
     bcmrRegistries.value = BCMR.getRegistries();
-  })
+  }
 
   async function setUpWalletSubscriptions(){
     const cancelWatchBchtxs = wallet.value?.watchBalance(async (newBalance) => {
@@ -79,10 +79,10 @@
           metadataPromises.push(metadataPromise)
         } catch(error){ console.log(error) }
       }
-      console.time('Execution Time0');
+      console.time('Promises BCMR indexer');
       const resolveMetadataPromsises = Promise.all(metadataPromises)
       const resultsMetadata = await resolveMetadataPromsises;
-      console.timeEnd('Execution Time0');
+      console.timeEnd('Promises BCMR indexer');
       resultsMetadata.forEach(async(response) => {
         if(response.status != 404){
           const jsonResponse = await response.json();
@@ -102,10 +102,10 @@
           authChainPromises.push(authChainPromise)
         } catch(error){ console.log(error) }
       }
-      console.time('Execution Time0');
+      console.time('Promises ChainGraph');
       const resolveChaingraphPromises = Promise.allSettled(authChainPromises)
       const resultsAuthChains = await resolveChaingraphPromises;
-      console.timeEnd('Execution Time0');
+      console.timeEnd('Promises ChainGraph');
       for(let index=0; index < resultsAuthChains.length; index++){
         const authChainResp = resultsAuthChains[index];
         if(authChainResp.status == "fulfilled"){
@@ -129,15 +129,18 @@
     <div class="wrapper">
       <HelloWorld msg="Cashonize-Vue" />
     </div>
-    <nav style="display: flex; margin: 20px 0px;">
+    <nav v-if="displayView" style="display: flex; margin: 20px 0px;">
       <div @click="changeView(1)">BchWallet</div>
       <div @click="changeView(2)">MyTokens</div>
       <div @click="changeView(3)">
         <img style="vertical-align: text-bottom;" src="images/settings.svg">
       </div>
     </nav>
-    <bchWalletView v-if="displayView == 1" :wallet="(wallet as TestNetWallet | null )" :balance="balance" :nrTokenCategories="nrTokenCategories"/>
-    <myTokensView v-if="displayView == 2" :wallet="(wallet as TestNetWallet | null )" :tokenList="tokenList" :chaingraph="chaingraph"/>
+    <Suspense>
+      <newWalletView @init-wallet="(arg) => setWallet(arg)"/>
+    </Suspense>
+    <bchWalletView v-if="displayView == 1" :wallet="(wallet as TestNetWallet | null )" :balance="balance" :nrTokenCategories="nrTokenCategories" :maxAmountToSend="maxAmountToSend"/>
+    <myTokensView v-if="displayView == 2" :wallet="(wallet as TestNetWallet | null )" :tokenList="tokenList" :bcmrRegistries="bcmrRegistries" :chaingraph="chaingraph"/>
     <settingsMenu :wallet="(wallet as TestNetWallet | null )" v-if="displayView == 3" />
   </main>
 </template>

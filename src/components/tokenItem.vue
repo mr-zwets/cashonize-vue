@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref, onMounted, watch, inject } from 'vue';
+  import { ref, onMounted, watch, toRefs } from 'vue';
   import { Wallet, TestNetWallet, TokenSendRequest, BCMR } from "mainnet-js"
   // @ts-ignore
   import { createIcon } from '@download/blockies';
@@ -9,13 +9,13 @@
     amount: number
   }
 
-  const { wallet, tokenData, chaingraph } = defineProps<{
+  const props = defineProps<{
     wallet: Wallet | TestNetWallet | null,
     tokenData: TokenData,
+    bcmrRegistries: any[]
     chaingraph: string
   }>()
-
-  const bcmr: (any[] |undefined) = inject('bcmrRegistries')
+  const { wallet, tokenData, bcmrRegistries, chaingraph } = toRefs(props);
 
   const displaySendTokens = ref(false);
   const displayTokenInfo = ref(false)
@@ -25,26 +25,26 @@
 
   const explorerUrlMainnet = "https://explorer.bitcoinunlimited.info";
   const explorerUrlChipnet = "https://chipnet.chaingraph.cash";
-  let explorerUrl = (wallet?.network == "mainnet")? explorerUrlMainnet : explorerUrlChipnet;
+  let explorerUrl = (wallet.value?.network == "mainnet")? explorerUrlMainnet : explorerUrlChipnet;
 
   onMounted(() => {
     let icon = createIcon({
-      seed: tokenData.tokenId,
+      seed: tokenData.value.tokenId,
       size: 12,
       scale: 4,
       spotcolor: '#000'
     });
     icon.style = "display: block; border-radius: 50%;"
-    const template = document.querySelector(`#id${tokenData.tokenId.slice(0, 10)}`);
+    const template = document.querySelector(`#id${tokenData.value.tokenId.slice(0, 10)}`);
     const iconDiv = template?.querySelector("#genericTokenIcon")
     iconDiv?.appendChild(icon);
 
-    tokenMetaData.value = BCMR.getTokenInfo(tokenData.tokenId)
+    tokenMetaData.value = BCMR.getTokenInfo(tokenData.value.tokenId)
   })
 
   async function maxTokenAmount(){
     try{
-      tokenSendAmount.value = tokenData.amount;
+      tokenSendAmount.value = tokenData.value.amount;
     } catch(error) {
       console.log(error)
     }
@@ -56,10 +56,10 @@
         new TokenSendRequest({
           cashaddr: destinationAddr.value,
           amount: tokenSendAmount.value,
-          tokenId: tokenData.tokenId,
+          tokenId: tokenData.value.tokenId,
         }),
       ]);
-      const displayId = `${tokenData.tokenId.slice(0, 20)}...${tokenData.tokenId.slice(-10)}`;
+      const displayId = `${tokenData.value.tokenId.slice(0, 20)}...${tokenData.value.tokenId.slice(-10)}`;
       let message = `Sent ${tokenSendAmount.value} fungible tokens of category ${displayId} to ${destinationAddr.value} \n${explorerUrl}/tx/${txId}`;
       alert(message);
       console.log(message);
@@ -68,9 +68,9 @@
     }
   }
 
-  watch(bcmr, async () => {
+  watch(bcmrRegistries, async () => {
     console.log("triggered!");
-    tokenMetaData.value = BCMR.getTokenInfo(tokenData.tokenId);
+    tokenMetaData.value = BCMR.getTokenInfo(tokenData.value.tokenId);
   })
 </script>
 
@@ -137,12 +137,12 @@
         </span>
         <div v-if="displayTokenInfo" id="tokenInfoDisplay" style="margin-top: 10px;">
           <div id="tokenBegin"></div>
-          <div id="tokenDescription"></div>
-          <div id="tokenDecimals"></div>
+          <div v-if="tokenMetaData?.description" id="tokenDescription"> {{ tokenMetaData.description }} </div>
+          <div v-if="tokenMetaData" id="tokenDecimals">Number of decimals: {{ tokenMetaData?.decimals ?? 0 }}</div>
           <div id="tokenCommitment"></div>
           <div id="tokenWebLink"></div>
           <div id="onchainTokenInfo" style="white-space: pre-line;"></div>
-          <details id="showAttributes" class="hide">
+          <details v-if="tokenData?.nft" id="showAttributes" class="hide">
             <summary>NFT attributes</summary>
             <div id="nftAttributes" style="white-space: pre-wrap;"></div>
           </details> 
