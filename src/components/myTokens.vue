@@ -1,6 +1,5 @@
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
   import tokenItem from './tokenItem.vue'
   import { Wallet, TestNetWallet  } from "mainnet-js"
 
@@ -10,14 +9,15 @@ import { ref, onMounted } from 'vue'
   }
 
   const { tokenList } = defineProps<{
+    wallet: Wallet | TestNetWallet | null,
     tokenList: Array<TokenData> | null,
-      chaingraph: string
+    chaingraph: string,
   }>()
 </script>
 
 <template>
   <div v-if="tokenList === null">Loading tokendata ...</div>
   <div v-for="tokenData in tokenList" :key="tokenData.tokenId">
-    <tokenItem :tokenData="tokenData" :chaingraph="chaingraph"/>
+    <tokenItem :wallet="wallet" :tokenData="tokenData" :chaingraph="chaingraph"/>
   </div>
 </template>

@@ -3,8 +3,8 @@
   import myTokensView from "./components/myTokens.vue"
   import settingsMenu from './components/settingsMenu.vue'
   import HelloWorld from './components/HelloWorld.vue'
-  import { ref, onMounted } from 'vue'
-  import { Wallet, TestNetWallet, BaseWallet, BalanceResponse } from "mainnet-js"
+  import { ref, onMounted, provide } from 'vue'
+  import { Wallet, TestNetWallet, BaseWallet, BalanceResponse, BCMR } from "mainnet-js"
   import { IndexedDBProvider } from "@mainnet-cash/indexeddb-storage"
 
   interface TokenData{
@@ -13,15 +13,23 @@
   }
 
   const defaultChaingraph = "https://gql.chaingraph.pat.mn/v1/graphql";
+  const dafaultIpfsGateway = "https://ipfs.io/ipfs/";
+  const defaultBcmrIndexer = "https://bcmr.paytaca.com/api";
 
   // reactive state
   const wallet = ref(null as (TestNetWallet | null));
   const network = ref("chipnet" as ("mainnet" | "chipnet"));
-  const balance = ref(0 as (number | undefined));
+  const balance = ref(undefined as (BalanceResponse | undefined));
   const nrTokenCategories = ref(0 as (number | undefined));
   const tokenList = ref(null as (Array<TokenData> | null));
   const displayView = ref(1);
   const chaingraph = ref(defaultChaingraph);
+  const ipfsGateway = ref(dafaultIpfsGateway);
+  const bcmrIndexer = ref(defaultBcmrIndexer);
+  const bcmrRegistries = ref([] as any[]);
+
+  // provide bcmrRegistries so component can watch changes
+  provide('bcmrRegistries', bcmrRegistries);
 
   function changeView(newView: number){
     displayView.value = newView;
@@ -42,10 +50,78 @@
       arrayTokens.push({ tokenId, amount: getFungibleTokensResponse[tokenId] });
     }
     // update state
-    balance.value = walletBalance.sat;
+    balance.value = walletBalance;
     nrTokenCategories.value = tokenCategories.length;
     tokenList.value = arrayTokens;
+    setUpWalletSubscriptions();
+    await importRegistries( Object.keys({...getFungibleTokensResponse}));
+    bcmrRegistries.value = BCMR.getRegistries();
   })
+
+  async function setUpWalletSubscriptions(){
+    const cancelWatchBchtxs = wallet.value?.watchBalance(async (newBalance) => {
+      balance.value = newBalance;
+    });
+    const cancelWatchTokenTxs = wallet.value?.watchAddressTokenTransactions(async(tx) => {
+      console.log(tx)
+    });
+  }
+
+  // Import onchain resolved BCMRs
+  async function importRegistries(tokenIds: string[]) {
+    // use the bcmrIndexer for mainnet
+    if(network.value == "mainnet"){
+      let metadataPromises = [];
+      for(let index=0; index < tokenIds.length; index++){
+        const tokenId = tokenIds[index];
+        try{
+          const metadataPromise = fetch(`${bcmrIndexer.value}/registries/${tokenId}/latest`);
+          metadataPromises.push(metadataPromise)
+        } catch(error){ console.log(error) }
+      }
+      console.time('Execution Time0');
+      const resolveMetadataPromsises = Promise.all(metadataPromises)
+      const resultsMetadata = await resolveMetadataPromsises;
+      console.timeEnd('Execution Time0');
+      resultsMetadata.forEach(async(response) => {
+        if(response.status != 404){
+          const jsonResponse = await response.json();
+          BCMR.addMetadataRegistry(jsonResponse);
+        }
+      })
+    } else {
+      let authChainPromises = [];
+      for(let index=0; index < tokenIds.length; index++){
+        const tokenId = tokenIds[index];
+        try{
+          const authChainPromise = BCMR.fetchAuthChainFromChaingraph({
+            chaingraphUrl: chaingraph.value,
+            transactionHash: tokenId,
+            network: network.value
+          });
+          authChainPromises.push(authChainPromise)
+        } catch(error){ console.log(error) }
+      }
+      console.time('Execution Time0');
+      const resolveChaingraphPromises = Promise.allSettled(authChainPromises)
+      const resultsAuthChains = await resolveChaingraphPromises;
+      console.timeEnd('Execution Time0');
+      for(let index=0; index < resultsAuthChains.length; index++){
+        const authChainResp = resultsAuthChains[index];
+        if(authChainResp.status == "fulfilled"){
+          try{
+            const authChain = authChainResp.value;
+            const bcmrLocation = authChain.at(-1)?.uris[0];
+            let httpsUrl = authChain.at(-1)?.httpsUrl;
+            // If IPFS, use own configured IPFS gateway
+            if(bcmrLocation?.startsWith("ipfs://")) httpsUrl = bcmrLocation.replace("ipfs://", ipfsGateway.value);
+            if(httpsUrl) await BCMR.addMetadataRegistryFromUri(httpsUrl);
+            console.log("Importing an on-chain resolved BCMR from " + httpsUrl);
+          }catch(e){ console.log(e) }
+        }
+      }
+    }
+  }
 </script>
 
 <template>
@@ -60,8 +136,8 @@
         <img style="vertical-align: text-bottom;" src="images/settings.svg">
       </div>
     </nav>
-    <bchWalletView v-if="displayView == 1" :wallet="(wallet as TestNetWallet | null )" :balance="balance" :nrTokenCategories="nrTokenCategories" :network="network"/>
-    <myTokensView v-if="displayView == 2" :tokenList="tokenList" :chaingraph="chaingraph" />
+    <bchWalletView v-if="displayView == 1" :wallet="(wallet as TestNetWallet | null )" :balance="balance" :nrTokenCategories="nrTokenCategories"/>
+    <myTokensView v-if="displayView == 2" :wallet="(wallet as TestNetWallet | null )" :tokenList="tokenList" :chaingraph="chaingraph"/>
     <settingsMenu :wallet="(wallet as TestNetWallet | null )" v-if="displayView == 3" />
   </main>
 </template>

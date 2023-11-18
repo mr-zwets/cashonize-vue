@@ -1,5 +1,6 @@
 <script setup lang="ts">
-  import { ref, onMounted } from 'vue';
+  import { ref, onMounted, watch, inject } from 'vue';
+  import { Wallet, TestNetWallet, TokenSendRequest, BCMR } from "mainnet-js"
   // @ts-ignore
   import { createIcon } from '@download/blockies';
 
@@ -8,13 +9,23 @@
     amount: number
   }
 
-  const { tokenData } = defineProps<{
+  const { wallet, tokenData, chaingraph } = defineProps<{
+    wallet: Wallet | TestNetWallet | null,
     tokenData: TokenData,
     chaingraph: string
   }>()
 
+  const bcmr: (any[] |undefined) = inject('bcmrRegistries')
+
   const displaySendTokens = ref(false);
   const displayTokenInfo = ref(false)
+  const tokenSendAmount = ref(0);
+  const destinationAddr = ref("");
+  const tokenMetaData = ref(null as (IdentitySnapshot | null));
+
+  const explorerUrlMainnet = "https://explorer.bitcoinunlimited.info";
+  const explorerUrlChipnet = "https://chipnet.chaingraph.cash";
+  let explorerUrl = (wallet?.network == "mainnet")? explorerUrlMainnet : explorerUrlChipnet;
 
   onMounted(() => {
     let icon = createIcon({
@@ -25,8 +36,41 @@
     });
     icon.style = "display: block; border-radius: 50%;"
     const template = document.querySelector(`#id${tokenData.tokenId.slice(0, 10)}`);
-    const iconDiv = template?.querySelector("#tokenIcon")
-    iconDiv?.replaceWith(icon);
+    const iconDiv = template?.querySelector("#genericTokenIcon")
+    iconDiv?.appendChild(icon);
+
+    tokenMetaData.value = BCMR.getTokenInfo(tokenData.tokenId)
+  })
+
+  async function maxTokenAmount(){
+    try{
+      tokenSendAmount.value = tokenData.amount;
+    } catch(error) {
+      console.log(error)
+    }
+  }
+  async function sendTokens(wallet: TestNetWallet | null){
+    try{
+      if(!wallet) return;
+      const { txId } = await wallet.send([
+        new TokenSendRequest({
+          cashaddr: destinationAddr.value,
+          amount: tokenSendAmount.value,
+          tokenId: tokenData.tokenId,
+        }),
+      ]);
+      const displayId = `${tokenData.tokenId.slice(0, 20)}...${tokenData.tokenId.slice(-10)}`;
+      let message = `Sent ${tokenSendAmount.value} fungible tokens of category ${displayId} to ${destinationAddr.value} \n${explorerUrl}/tx/${txId}`;
+      alert(message);
+      console.log(message);
+    } catch(error){
+      console.log(error)
+    }
+  }
+
+  watch(bcmr, async () => {
+    console.log("triggered!");
+    tokenMetaData.value = BCMR.getTokenInfo(tokenData.tokenId);
   })
 </script>
 
@@ -43,7 +87,8 @@
         </div>
       </div>
       <div class="tokenInfo">
-        <div id="tokenIcon" class="tokenIcon"></div>
+        <div v-if="!tokenMetaData?.uris?.icon" id="genericTokenIcon" class="tokenIcon"></div>
+        <img v-if="tokenMetaData?.uris?.icon" id="tokenIcon" class="tokenIcon" :src="tokenMetaData?.uris?.icon" style=" height: 48px; width: 48px; border-radius: 50%;">
         <div v-if="tokenData?.nft" id="tokenIconModal" class="modal">
           <span class="close">&times;</span>
           <img class="modal-content" id="imgTokenIcon" style="width: 400px; max-width: 80%;">
@@ -51,7 +96,7 @@
         </div>
         <div class="tokenBaseInfo">
           <div class="tokenBaseInfo1">
-            <div id="tokenName"></div>
+            <div v-if="tokenMetaData?.name" id="tokenName">Name: {{ tokenMetaData?.name }}</div>
             <div id="tokenIdBox" style="word-break: break-all;">
               TokenId: {{ `${tokenData.tokenId.slice(0, 20)}...${tokenData.tokenId.slice(-10)}` }}
               <button type="button" style="background: none; padding: 0; " onclick="copyTokenID(event)">
@@ -105,16 +150,18 @@
         <div v-if="displaySendTokens" id="tokenSend" style="margin-top: 10px;">
           Send these tokens to
           <p class="inputGroup">
-            <span class="addressInput"><input id="tokenAddress" placeholder="token address"></span>
+            <span class="addressInput">
+              <input v-model="destinationAddr" id="tokenAddress" placeholder="token address">
+            </span>
             <span class="sendAmountGroup">
               <span style="width: 100%;" class="input-icon input-icon-right">
-                <input id="sendTokenAmount" placeholder="amount">
+                <input v-model="tokenSendAmount" id="sendTokenAmount" placeholder="amount">
                 <i id="sendUnit" style="color: black; width: 70px;">tokens</i>
               </span>
-              <button  id="maxButton" style="color: black;">max</button>
+              <button @click="maxTokenAmount()" id="maxButton" style="color: black;">max</button>
             </span>
           </p>
-          <input type="button" id="sendSomeButton" class="primaryButton" value="Send">
+          <input @click="sendTokens(wallet)" type="button" id="sendSomeButton" class="primaryButton" value="Send">
         </div><!--
         <div id="nftSend"  class="hide"  style="margin-top: 10px;">
           Send this NFT to

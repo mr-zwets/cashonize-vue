@@ -1,35 +1,34 @@
 <script setup lang="ts">
   import { ref, onMounted } from 'vue'
-  import { Wallet, TestNetWallet  } from "mainnet-js"
+  import { Wallet, TestNetWallet, BalanceResponse  } from "mainnet-js"
   import { defineCustomElements } from '@bitjson/qr-code';
 
-  const { wallet, balance, nrTokenCategories, network } = defineProps<{
+  const { wallet, balance, nrTokenCategories } = defineProps<{
     wallet: Wallet | TestNetWallet | null,
-    balance?: number,
+    balance?: BalanceResponse,
     nrTokenCategories?: number,
-    network: ("mainnet" | "chipnet");
   }>()
 
   defineCustomElements(window);
 
   // reactive state
   const displayeBchQr = ref(true);
-  const sendAmount = ref(0);
-  const sendAddr = ref("");
+  const bchSendAmount = ref(null as (number | null));
+  const destinationAddr = ref("");
 
   const explorerUrlMainnet = "https://explorer.bitcoinunlimited.info";
   const explorerUrlChipnet = "https://chipnet.chaingraph.cash";
-  let explorerUrl = (network == "mainnet")? explorerUrlMainnet : explorerUrlChipnet;
+  let explorerUrl = (wallet?.network == "mainnet")? explorerUrlMainnet : explorerUrlChipnet;
 
   function switchAddressTypeQr(){
     displayeBchQr.value = !displayeBchQr.value;
   }
-  async function maxSendAmount(wallet: TestNetWallet | null){
+  async function getMaxBchAmount(wallet: TestNetWallet | null){
     try{
       if(!wallet) return
       const maxAmountToSend = await wallet.getMaxAmountToSend();
       if(!maxAmountToSend.sat) throw("expected a number")
-      sendAmount.value = maxAmountToSend.sat;
+      bchSendAmount.value = maxAmountToSend.sat;
     } catch(error) {
       console.log(error)
     }
@@ -37,9 +36,12 @@
   async function sendBch(wallet: TestNetWallet | null){
     try{
       if(!wallet) return;
-      const { txId } = await wallet.send([{ cashaddr: sendAddr.value, value: sendAmount.value, unit: "sat" }]);
-      alert(`Sent ${sendAmount.value} sats to ${sendAddr.value} \n${explorerUrl}/tx/${txId}`);
-      console.log(`Sent ${sendAmount.value} sats to ${sendAddr.value} \n${explorerUrl}/tx/${txId}`);
+      if(!bchSendAmount.value) throw("No valid amount provided!")
+      const { txId } = await wallet.send([{ cashaddr: destinationAddr.value, value: bchSendAmount.value, unit: "sat" }]);
+      alert(`Sent ${bchSendAmount.value} sats to ${destinationAddr.value} \n${explorerUrl}/tx/${txId}`);
+      console.log(`Sent ${bchSendAmount.value} sats to ${destinationAddr.value} \n${explorerUrl}/tx/${txId}`);
+      bchSendAmount.value = null;
+      destinationAddr.value = "";
     } catch(error){
       console.log(error)
     }
@@ -52,7 +54,7 @@
     <div>
       BCH balance:  
       <span style="color: hsla(160, 100%, 37%, 1);">
-        {{ balance ? balance + " sats" : "" }}
+        {{ balance?.sat ? balance.sat + " sats" : "" }}
       </span>
     </div>
     <div>
@@ -74,14 +76,14 @@
     <legend>Send BCH to</legend>
     <div class="inputGroup">
       <span class="addressInput">
-        <input v-model="sendAddr" id="sendAddr" placeholder="address">
+        <input v-model="destinationAddr" id="destinationAddr" placeholder="address">
       </span>
       <span class="sendAmountGroup">
         <span style="width: 100%;" class="input-icon input-icon-right">
-          <input v-model="sendAmount" id="sendAmount" type="text" placeholder="amount">
+          <input v-model="bchSendAmount" id="sendAmount" type="text" placeholder="amount">
           <i id="sendUnit" style="color: black;">BCH</i>
         </span>
-        <button @click="maxSendAmount(wallet)" style="color: black;">max</button>
+        <button @click="getMaxBchAmount(wallet)" style="color: black;">max</button>
       </span>
     </div>
     <input @click="sendBch(wallet)" type="button" class="primaryButton" id="send" value="Send">
