@@ -54,13 +54,13 @@
     <div>
       BCH balance:  
       <span style="color: hsla(160, 100%, 37%, 1);">
-        {{ balance?.sat ? balance.sat + " sats" : "" }}
+        {{ balance?.sat != undefined ? balance.sat + " sats" : "" }}
       </span>
     </div>
     <div>
       Wallet token balance: 
       <span style="color: hsla(160, 100%, 37%, 1);">
-        {{ nrTokenCategories ? nrTokenCategories + " different token categories" : ""}}
+        {{ nrTokenCategories != undefined ? nrTokenCategories + " different token categories" : ""}}
       </span>
     </div>
     <div> {{ wallet?.address ?? "" }} </div>

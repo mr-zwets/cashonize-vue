@@ -14,8 +14,9 @@
     tokenData: TokenData,
     bcmrRegistries: any[]
     chaingraph: string
+    ipfsGateway: string
   }>()
-  const { wallet, tokenData, bcmrRegistries, chaingraph } = toRefs(props);
+  const { wallet, tokenData, bcmrRegistries, ipfsGateway } = toRefs(props);
 
   const displaySendTokens = ref(false);
   const displayTokenInfo = ref(false)
@@ -88,7 +89,9 @@
       </div>
       <div class="tokenInfo">
         <div v-if="!tokenMetaData?.uris?.icon" id="genericTokenIcon" class="tokenIcon"></div>
-        <img v-if="tokenMetaData?.uris?.icon" id="tokenIcon" class="tokenIcon" :src="tokenMetaData?.uris?.icon" style=" height: 48px; width: 48px; border-radius: 50%;">
+        <img v-if="tokenMetaData?.uris?.icon" id="tokenIcon" class="tokenIcon" style=" height: 48px; width: 48px; border-radius: 50%;"
+          :src="tokenMetaData?.uris?.icon.startsWith('ipfs://')? ipfsGateway+ tokenMetaData?.uris?.icon.slice(7) : tokenMetaData?.uris?.icon"
+        >
         <div v-if="tokenData?.nft" id="tokenIconModal" class="modal">
           <span class="close">&times;</span>
           <img class="modal-content" id="imgTokenIcon" style="width: 400px; max-width: 80%;">

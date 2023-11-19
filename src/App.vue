@@ -12,22 +12,23 @@
     amount: number
   }
 
+  const nameWallet = "mywallet";
   const defaultChaingraph = "https://gql.chaingraph.pat.mn/v1/graphql";
   const dafaultIpfsGateway = "https://ipfs.io/ipfs/";
   const defaultBcmrIndexer = "https://bcmr.paytaca.com/api";
 
   // reactive state
   const wallet = ref(null as (Wallet |TestNetWallet | null));
-  const network = ref("chipnet" as ("mainnet" | "chipnet"));
+  const network = ref("mainnet" as ("mainnet" | "chipnet"));
   const balance = ref(undefined as (BalanceResponse | undefined));
   const maxAmountToSend = ref(undefined as (BalanceResponse | undefined));
-  const nrTokenCategories = ref(0 as (number | undefined));
+  const nrTokenCategories = ref(undefined as (number | undefined));
   const tokenList = ref(null as (Array<TokenData> | null));
   const displayView = ref(undefined as (number | undefined));
   const chaingraph = ref(defaultChaingraph);
   const ipfsGateway = ref(dafaultIpfsGateway);
   const bcmrIndexer = ref(defaultBcmrIndexer);
-  const bcmrRegistries = ref([] as any[]);
+  const bcmrRegistries = ref(undefined as (any[] | undefined));
 
   function changeView(newView: number){
     displayView.value = newView;
@@ -55,6 +56,8 @@
     maxAmountToSend.value = resultMaxAmountToSend;
     setUpWalletSubscriptions();
     await importRegistries( Object.keys({...resultGetFungibleTokens}));
+    // timeout needed for correct rerender
+    await new Promise(resolve => setTimeout(resolve, 10));
     bcmrRegistries.value = BCMR.getRegistries();
   }
 
@@ -65,6 +68,16 @@
     const cancelWatchTokenTxs = wallet.value?.watchAddressTokenTransactions(async(tx) => {
       console.log(tx)
     });
+  }
+
+  async function changeNetwork(newNetwork: "mainnet" | "chipnet"){
+    const walletClass = (newNetwork == "mainnet")? Wallet : TestNetWallet;
+    console.log(newNetwork)
+    const newWallet = await walletClass.named(nameWallet);
+    setWallet(newWallet);
+    network.value = newNetwork;
+    console.log(newNetwork)
+    changeView(1);
   }
 
   // Import onchain resolved BCMRs
@@ -140,8 +153,8 @@
       <newWalletView @init-wallet="(arg) => setWallet(arg)"/>
     </Suspense>
     <bchWalletView v-if="displayView == 1" :wallet="(wallet as TestNetWallet | null )" :balance="balance" :nrTokenCategories="nrTokenCategories" :maxAmountToSend="maxAmountToSend"/>
-    <myTokensView v-if="displayView == 2" :wallet="(wallet as TestNetWallet | null )" :tokenList="tokenList" :bcmrRegistries="bcmrRegistries" :chaingraph="chaingraph"/>
-    <settingsMenu :wallet="(wallet as TestNetWallet | null )" v-if="displayView == 3" />
+    <myTokensView v-if="displayView == 2" :wallet="(wallet as TestNetWallet | null )" :tokenList="tokenList" :bcmrRegistries="bcmrRegistries" :chaingraph="chaingraph" :ipfsGateway="ipfsGateway"/>
+    <settingsMenu @change-network="(arg) => changeNetwork(arg)" :wallet="(wallet as TestNetWallet | null )" v-if="displayView == 3" :network="network"/>
   </main>
 </template>
 

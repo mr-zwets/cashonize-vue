@@ -1,19 +1,33 @@
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, toRefs, defineEmits } from 'vue'
   import { Wallet, TestNetWallet  } from "mainnet-js"
 
-  const { wallet } = defineProps<{
+  const props = defineProps<{
     wallet: Wallet | TestNetWallet | null,
+    network: "mainnet" | "chipnet"
   }>()
+  const { wallet, network } = toRefs(props);
 
   const displayeSeedphrase = ref(false);
+  const selectedNetwork = ref(network.value);
+  const emit = defineEmits(['changeNetwork']);
 
+  function changeNetwork(){
+    const newNetwork = selectedNetwork.value;
+    console.log(newNetwork)
+    emit('changeNetwork', newNetwork);
+  }
   function toggleShowSeedphrase(){
     displayeSeedphrase.value = !displayeSeedphrase.value;
   }
   function confirmDeleteWallet(){
-    alert("this would delete your wallet")
+    let text = "You are about to delete your Cashonize wallet info from this browser.\nAre you sure you want to delete?";
+    if (confirm(text)){
+      indexedDB.deleteDatabase("bitcoincash");
+      indexedDB.deleteDatabase("bchtest");
+      location.reload(); 
+    }
   }
 </script>
 
@@ -31,7 +45,7 @@ import { ref } from 'vue'
     </div>
     <div style="margin-top:15px">
       <label for="selectNetwork">Change network:</label>
-      <select name="selectNetwork" id="selectNetwork" onchange="changeNetwork(event)">
+      <select v-model="selectedNetwork" @change="changeNetwork()">
         <option value="mainnet">mainnet</option>
         <option value="chipnet">chipnet</option>
       </select>
