@@ -15,6 +15,7 @@
     "@bitjson/qr-code": "^1.0.2",
     "@download/blockies": "^1.0.3",
     "@mainnet-cash/indexeddb-storage": "^2.2.7",
+    "@vueform/toggle": "^2.1.4",
     "chota": "^0.9.2",
     "mainnet-js": "^2.2.7",
     "vue": "^3.3.4"

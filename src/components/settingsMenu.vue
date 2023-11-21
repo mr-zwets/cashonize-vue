@@ -1,6 +1,6 @@
-
 <script setup lang="ts">
-import { ref, toRefs, defineEmits } from 'vue'
+  import Toggle from '@vueform/toggle'
+  import { ref, toRefs, defineEmits } from 'vue'
   import { Wallet, TestNetWallet  } from "mainnet-js"
 
   const props = defineProps<{
@@ -12,7 +12,8 @@ import { ref, toRefs, defineEmits } from 'vue'
 
   const displayeSeedphrase = ref(false);
   const selectedNetwork = ref(network.value);
-  const selectedUnit  = ref(bchUnit.value)
+  const selectedUnit  = ref(bchUnit.value);
+  const darkmode  = ref(false);
   const emit = defineEmits(['changeUnit','changeNetwork']);
 
   function changeUnit(){
@@ -41,8 +42,9 @@ import { ref, toRefs, defineEmits } from 'vue'
 <template>
   <fieldset class="item">
     <legend>Settings</legend>
-    <span style="margin-top: 15px;">Dark mode </span>
-    <input type="checkbox" class="js-switch js-check-change" id="darkmode">
+    <span style="margin-top: 15px;">Dark mode 
+      <Toggle v-model="darkmode" :classes="{container: ''}" style=" vertical-align: middle;toggle-height: 5.25rem; display: inline-block;"/>
+    </span>
     <div style="margin-top:15px">
       <label for="selectUnit">Select default unit:</label>
       <select v-model="selectedUnit" @change="changeUnit()">
@@ -68,3 +70,5 @@ import { ref, toRefs, defineEmits } from 'vue'
     <input @click="confirmDeleteWallet()" type="button" id="burnNFT" value="Delete wallet" class="button error" style="display: block;">
   </fieldset>
 </template>
+
+<style src="@vueform/toggle/themes/default.css"></style>

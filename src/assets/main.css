@@ -3,6 +3,7 @@
 
 :root {
   --color-primary: #0ac18f;
+  --toggle-height: 1.7rem;
 }
 
 #app {
