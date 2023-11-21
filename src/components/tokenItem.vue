@@ -1,12 +1,13 @@
 <script setup lang="ts">
   import { ref, onMounted, watch, toRefs } from 'vue';
-  import { Wallet, TestNetWallet, TokenSendRequest, BCMR } from "mainnet-js"
+  import { Wallet, TestNetWallet, TokenSendRequest, BCMR, type UtxoI } from "mainnet-js"
   // @ts-ignore
   import { createIcon } from '@download/blockies';
 
-  interface TokenData {
+  interface TokenData{
     tokenId: string,
-    amount: number
+    amount?: number,
+    nfts?: UtxoI[]
   }
 
   const props = defineProps<{
@@ -108,9 +109,9 @@
             </div>
             <div id="childNftCommitment" style="word-break: break-all;" class="hide"></div>
           </div>
-          <div class="tokenAmount" id="tokenAmount">Token amount: {{ tokenData.amount }}</div>
+          <div v-if="tokenData?.amount" class="tokenAmount" id="tokenAmount">Token amount: {{ tokenData.amount }}</div>
           <div v-if="tokenData?.nfts" class="childNfts" id="childNfts" style=" cursor: pointer;">
-            <span class="nrChildNfts" id="nrChildNfts"></span>
+            <span class="nrChildNfts" id="nrChildNfts">Number NFTs: {{ tokenData.nfts?.length }}</span>
             <span class="hide" id="showMore" style="margin-left: 10px;">
               <img id="showIcon" class="icon" style="vertical-align: text-bottom;" src="/images/chevron-square-down.svg">
             </span>
@@ -141,7 +142,7 @@
         <div v-if="displayTokenInfo" id="tokenInfoDisplay" style="margin-top: 10px;">
           <div id="tokenBegin"></div>
           <div v-if="tokenMetaData?.description" id="tokenDescription"> {{ tokenMetaData.description }} </div>
-          <div v-if="tokenMetaData" id="tokenDecimals">Number of decimals: {{ tokenMetaData?.decimals ?? 0 }}</div>
+          <div v-if="tokenData.amount && tokenMetaData" id="tokenDecimals">Number of decimals: {{ tokenMetaData?.decimals ?? 0 }}</div>
           <div id="tokenCommitment"></div>
           <div id="tokenWebLink"></div>
           <div id="onchainTokenInfo" style="white-space: pre-line;"></div>

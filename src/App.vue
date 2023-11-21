@@ -5,11 +5,12 @@
   import settingsMenu from './components/settingsMenu.vue'
   import HelloWorld from './components/HelloWorld.vue'
   import { ref } from 'vue'
-  import { Wallet, TestNetWallet, BalanceResponse, BCMR } from "mainnet-js"
+  import { Wallet, TestNetWallet, BalanceResponse, BCMR, type UtxoI } from "mainnet-js"
 
   interface TokenData{
     tokenId: string,
-    amount: number
+    amount?: number,
+    nfts?: UtxoI[]
   }
 
   const nameWallet = "mywallet";
@@ -45,17 +46,30 @@
     const balancePromises: any[] = [promiseWalletBalance, promiseGetFungibleTokens, promiseGetNFTs,promiseMaxAmountToSend];
     const [resultWalletBalance, resultGetFungibleTokens, resultGetNFTs, resultMaxAmountToSend] = await Promise.all(balancePromises);
     console.timeEnd('Balance Promises');
-    let tokenCategories = Object.keys({...resultGetFungibleTokens, ...resultGetNFTs})
-    const arrayTokens = [];
+    let tokenCategories = Object.keys({...resultGetFungibleTokens, ...resultGetNFTs});
+    balance.value = resultWalletBalance;
+    nrTokenCategories.value = tokenCategories.length;
+    maxAmountToSend.value = resultMaxAmountToSend;
+    // Get NFT data
+    const arrayTokens:TokenData[] = [];
     for (const tokenId of Object.keys(resultGetFungibleTokens)) {
       arrayTokens.push({ tokenId, amount: resultGetFungibleTokens[tokenId] });
     }
-    balance.value = resultWalletBalance;
-    nrTokenCategories.value = tokenCategories.length;
+    console.time('Utxo Promises');
+    const nftUtxoPromises = [];
+    for (const tokenId of Object.keys(resultGetNFTs)) {
+      nftUtxoPromises.push(wallet.value.getTokenUtxos(tokenId));
+    }
+    const nftUtxoResults = await Promise.all(nftUtxoPromises);
+    for (const nftUtxos of nftUtxoResults) {
+      const tokenId = nftUtxos[0].token?.tokenId;
+      if(!tokenId) return // should never happen
+      arrayTokens.push({ tokenId, nfts: nftUtxos });
+    }
+    console.timeEnd('Utxo Promises');
     tokenList.value = arrayTokens;
-    maxAmountToSend.value = resultMaxAmountToSend;
     setUpWalletSubscriptions();
-    await importRegistries( Object.keys({...resultGetFungibleTokens}));
+    await importRegistries(tokenCategories);
     // timeout needed for correct rerender
     await new Promise(resolve => setTimeout(resolve, 10));
     bcmrRegistries.value = BCMR.getRegistries();
@@ -89,11 +103,11 @@
         const tokenId = tokenIds[index];
         try{
           const metadataPromise = fetch(`${bcmrIndexer.value}/registries/${tokenId}/latest`);
-          metadataPromises.push(metadataPromise)
-        } catch(error){ console.log(error) }
+          metadataPromises.push(metadataPromise);
+        } catch(error){ /*console.log(error)*/ }
       }
       console.time('Promises BCMR indexer');
-      const resolveMetadataPromsises = Promise.all(metadataPromises)
+      const resolveMetadataPromsises = Promise.all(metadataPromises);
       const resultsMetadata = await resolveMetadataPromsises;
       console.timeEnd('Promises BCMR indexer');
       resultsMetadata.forEach(async(response) => {

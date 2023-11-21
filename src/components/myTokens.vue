@@ -1,14 +1,14 @@
 
 <script setup lang="ts">
   import tokenItem from './tokenItem.vue'
-  import { Wallet, TestNetWallet  } from "mainnet-js"
+  import { Wallet, TestNetWallet, type UtxoI } from "mainnet-js"
 
   interface TokenData{
     tokenId: string,
-    amount: number
+    amount?: number,
+    nfts?: UtxoI[]
   }
-
-  const props = defineProps<{
+  defineProps<{
     wallet: Wallet | TestNetWallet | null,
     tokenList: Array<TokenData> | null,
     bcmrRegistries: any[] | undefined,
