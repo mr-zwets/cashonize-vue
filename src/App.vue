@@ -41,7 +41,7 @@
     wallet.value = newWallet;
     console.time('Balance Promises');
     const promiseWalletBalance = wallet.value.getBalance() as BalanceResponse;
-    const promiseMaxAmountToSend =await wallet.value.getMaxAmountToSend();
+    const promiseMaxAmountToSend = wallet.value.getMaxAmountToSend();
     const promiseGetFungibleTokens = wallet.value.getAllTokenBalances();
     const promiseGetNFTs = wallet.value.getAllNftTokenBalances();
     const balancePromises: any[] = [promiseWalletBalance, promiseGetFungibleTokens, promiseGetNFTs,promiseMaxAmountToSend];
@@ -51,6 +51,16 @@
     balance.value = resultWalletBalance;
     nrTokenCategories.value = tokenCategories.length;
     maxAmountToSend.value = resultMaxAmountToSend;
+    await updateTokenList(resultGetFungibleTokens, resultGetNFTs);
+    setUpWalletSubscriptions();
+    await importRegistries(tokenCategories);
+    // timeout needed for correct rerender
+    await new Promise(resolve => setTimeout(resolve, 10));
+    bcmrRegistries.value = BCMR.getRegistries();
+  }
+
+  async function updateTokenList(resultGetFungibleTokens: any, resultGetNFTs: any){
+    if(!wallet.value) return // should never happen
     // Get NFT data
     const arrayTokens:TokenData[] = [];
     for (const tokenId of Object.keys(resultGetFungibleTokens)) {
@@ -69,19 +79,20 @@
     }
     console.timeEnd('Utxo Promises');
     tokenList.value = arrayTokens;
-    setUpWalletSubscriptions();
-    await importRegistries(tokenCategories);
-    // timeout needed for correct rerender
-    await new Promise(resolve => setTimeout(resolve, 10));
-    bcmrRegistries.value = BCMR.getRegistries();
   }
 
   async function setUpWalletSubscriptions(){
     const cancelWatchBchtxs = wallet.value?.watchBalance(async (newBalance) => {
       balance.value = newBalance;
+      maxAmountToSend.value = await wallet.value?.getMaxAmountToSend();
     });
     const cancelWatchTokenTxs = wallet.value?.watchAddressTokenTransactions(async(tx) => {
-      console.log(tx)
+      if(!wallet.value) return // should never happen
+      const promiseGetFungibleTokens = wallet.value.getAllTokenBalances();
+      const promiseGetNFTs = wallet.value.getAllNftTokenBalances();
+      const balancePromises: any[] = [promiseGetFungibleTokens, promiseGetNFTs];
+      const [resultGetFungibleTokens, resultGetNFTs] = await Promise.all(balancePromises);
+      await updateTokenList(resultGetFungibleTokens, resultGetNFTs);
     });
   }
 
