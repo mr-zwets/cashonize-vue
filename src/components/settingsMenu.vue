@@ -5,14 +5,21 @@ import { ref, toRefs, defineEmits } from 'vue'
 
   const props = defineProps<{
     wallet: Wallet | TestNetWallet | null,
-    network: "mainnet" | "chipnet"
+    network: "mainnet" | "chipnet",
+    bchUnit: "bch" | "sat"
   }>()
-  const { wallet, network } = toRefs(props);
+  const { wallet, network, bchUnit } = toRefs(props);
 
   const displayeSeedphrase = ref(false);
   const selectedNetwork = ref(network.value);
-  const emit = defineEmits(['changeNetwork']);
+  const selectedUnit  = ref(bchUnit.value)
+  const emit = defineEmits(['changeUnit','changeNetwork']);
 
+  function changeUnit(){
+    const newUnit = selectedUnit.value;
+    console.log(newUnit)
+    emit('changeUnit', newUnit);
+  }
   function changeNetwork(){
     const newNetwork = selectedNetwork.value;
     console.log(newNetwork)
@@ -38,9 +45,9 @@ import { ref, toRefs, defineEmits } from 'vue'
     <input type="checkbox" class="js-switch js-check-change" id="darkmode">
     <div style="margin-top:15px">
       <label for="selectUnit">Select default unit:</label>
-      <select name="selectUnit" id="selectUnit" onchange="selectUnit(event)">
-        <option value="BCH">BCH</option>
-        <option value="satoshis">satoshis</option>
+      <select v-model="selectedUnit" @change="changeUnit()">
+        <option value="bch">BCH</option>
+        <option value="sat">satoshis</option>
       </select>
     </div>
     <div style="margin-top:15px">

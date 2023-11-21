@@ -30,6 +30,7 @@
   const ipfsGateway = ref(dafaultIpfsGateway);
   const bcmrIndexer = ref(defaultBcmrIndexer);
   const bcmrRegistries = ref(undefined as (any[] | undefined));
+  const bchUnit = ref("bch" as ("bch" | "sat"));
 
   function changeView(newView: number){
     displayView.value = newView;
@@ -84,13 +85,22 @@
     });
   }
 
+  function changeUnit(newUnit: "bch" | "sat"){
+    console.log(newUnit)
+    bchUnit.value = newUnit;
+    changeView(1);
+  }
+
   async function changeNetwork(newNetwork: "mainnet" | "chipnet"){
     const walletClass = (newNetwork == "mainnet")? Wallet : TestNetWallet;
-    console.log(newNetwork)
     const newWallet = await walletClass.named(nameWallet);
     setWallet(newWallet);
     network.value = newNetwork;
-    console.log(newNetwork)
+    // reset wallet to default state
+    balance.value = undefined;
+    nrTokenCategories.value = undefined;
+    maxAmountToSend.value = undefined;
+    tokenList.value = null;
     changeView(1);
   }
 
@@ -166,9 +176,9 @@
     <Suspense>
       <newWalletView @init-wallet="(arg) => setWallet(arg)"/>
     </Suspense>
-    <bchWalletView v-if="displayView == 1" :wallet="(wallet as TestNetWallet | null )" :balance="balance" :nrTokenCategories="nrTokenCategories" :maxAmountToSend="maxAmountToSend"/>
+    <bchWalletView v-if="displayView == 1" :wallet="(wallet as TestNetWallet | null )" :balance="balance" :nrTokenCategories="nrTokenCategories" :maxAmountToSend="maxAmountToSend" :bchUnit="bchUnit"/>
     <myTokensView v-if="displayView == 2" :wallet="(wallet as TestNetWallet | null )" :tokenList="tokenList" :bcmrRegistries="bcmrRegistries" :chaingraph="chaingraph" :ipfsGateway="ipfsGateway"/>
-    <settingsMenu @change-network="(arg) => changeNetwork(arg)" :wallet="(wallet as TestNetWallet | null )" v-if="displayView == 3" :network="network"/>
+    <settingsMenu @change-network="(arg) => changeNetwork(arg)" @change-unit="(arg) => changeUnit(arg)" :wallet="(wallet as TestNetWallet | null )" v-if="displayView == 3" :network="network" :bchUnit="bchUnit"/>
   </main>
 </template>
 

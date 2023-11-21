@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref, onMounted, watch, toRefs } from 'vue';
+  import { ref, onMounted, watch, toRefs, computed } from 'vue';
   import { Wallet, TestNetWallet, TokenSendRequest, BCMR, type UtxoI } from "mainnet-js"
   // @ts-ignore
   import { createIcon } from '@download/blockies';
@@ -21,9 +21,16 @@
 
   const displaySendTokens = ref(false);
   const displayTokenInfo = ref(false)
-  const tokenSendAmount = ref(0);
+  const tokenSendAmount = ref(undefined as number | undefined);
   const destinationAddr = ref("");
   const tokenMetaData = ref(null as (IdentitySnapshot | null));
+
+  const httpsUrlTokenIcon = computed(() => {
+    if(tokenMetaData?.value.uris?.icon.startsWith('ipfs://')){
+      return ipfsGateway.value + tokenMetaData?.value.uris?.icon.slice(7);
+    }
+    else return tokenMetaData?.value.uris?.icon
+  })
 
   const explorerUrlMainnet = "https://explorer.bitcoinunlimited.info";
   const explorerUrlChipnet = "https://chipnet.chaingraph.cash";
@@ -90,9 +97,7 @@
       </div>
       <div class="tokenInfo">
         <div v-if="!tokenMetaData?.uris?.icon" id="genericTokenIcon" class="tokenIcon"></div>
-        <img v-if="tokenMetaData?.uris?.icon" id="tokenIcon" class="tokenIcon" style=" height: 48px; width: 48px; border-radius: 50%;"
-          :src="tokenMetaData?.uris?.icon.startsWith('ipfs://')? ipfsGateway+ tokenMetaData?.uris?.icon.slice(7) : tokenMetaData?.uris?.icon"
-        >
+        <img v-if="tokenMetaData?.uris?.icon" id="tokenIcon" class="tokenIcon" style=" height: 48px; width: 48px; border-radius: 50%;" :src="httpsUrlTokenIcon">
         <div v-if="tokenData?.nft" id="tokenIconModal" class="modal">
           <span class="close">&times;</span>
           <img class="modal-content" id="imgTokenIcon" style="width: 400px; max-width: 80%;">

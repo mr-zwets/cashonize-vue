@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref, toRefs } from 'vue'
+  import { ref, toRefs, computed } from 'vue'
   import { Wallet, TestNetWallet, BalanceResponse  } from "mainnet-js"
   import { defineCustomElements } from '@bitjson/qr-code';
 
@@ -8,14 +8,20 @@
     balance?: BalanceResponse,
     maxAmountToSend?: BalanceResponse | undefined,
     nrTokenCategories?: number,
+    bchUnit: "bch" | "sat"
   }>()
-  const { wallet, balance, maxAmountToSend, nrTokenCategories } = toRefs(props);
+  const { wallet, balance, maxAmountToSend, nrTokenCategories, bchUnit } = toRefs(props);
+
+  const displayUnitLong = computed(() => {
+    if(wallet.value?.network == "mainnet") return bchUnit.value == "bch"? " BCH" : " satoshis"
+    else return bchUnit.value == "bch"? " tBCH" : " testnet satoshis"
+  })
 
   defineCustomElements(window);
 
   // reactive state
   const displayeBchQr = ref(true);
-  const bchSendAmount = ref(null as (number | null));
+  const bchSendAmount = ref(undefined as (number | undefined));
   const destinationAddr = ref("");
 
   const explorerUrlMainnet = "https://explorer.bitcoinunlimited.info";
@@ -27,8 +33,8 @@
   }
   async function useMaxBchAmount(){
     try{
-      if(!maxAmountToSend?.value?.sat) throw("expected a number");
-      bchSendAmount.value = maxAmountToSend.value.sat;
+      if(maxAmountToSend?.value && maxAmountToSend?.value[bchUnit.value]) bchSendAmount.value = maxAmountToSend.value[bchUnit.value];
+      else throw("expected a number");
     } catch(error) {
       console.log(error)
     }
@@ -37,10 +43,10 @@
     try{
       if(!wallet) return;
       if(!bchSendAmount.value) throw("No valid amount provided!")
-      const { txId } = await wallet.send([{ cashaddr: destinationAddr.value, value: bchSendAmount.value, unit: "sat" }]);
-      alert(`Sent ${bchSendAmount.value} sats to ${destinationAddr.value} \n${explorerUrl}/tx/${txId}`);
-      console.log(`Sent ${bchSendAmount.value} sats to ${destinationAddr.value} \n${explorerUrl}/tx/${txId}`);
-      bchSendAmount.value = null;
+      const { txId } = await wallet.send([{ cashaddr: destinationAddr.value, value: bchSendAmount.value, unit: bchUnit.value}]);
+      alert(`Sent ${bchSendAmount.value, displayUnitLong.value} to ${destinationAddr.value} \n${explorerUrl}/tx/${txId}`);
+      console.log(`Sent ${bchSendAmount.value, displayUnitLong.value} to ${destinationAddr.value} \n${explorerUrl}/tx/${txId}`);
+      bchSendAmount.value = undefined;
       destinationAddr.value = "";
     } catch(error){
       console.log(error)
@@ -54,7 +60,7 @@
     <div>
       BCH balance:  
       <span style="color: hsla(160, 100%, 37%, 1);">
-        {{ balance?.sat != undefined ? balance.sat + " sats" : "" }}
+        {{ balance && balance[bchUnit] != undefined ? balance[bchUnit] + displayUnitLong : "" }}
       </span>
     </div>
     <div>
