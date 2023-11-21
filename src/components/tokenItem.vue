@@ -21,7 +21,7 @@
 
   const displaySendTokens = ref(false);
   const displayTokenInfo = ref(false)
-  const tokenSendAmount = ref(undefined as number | undefined);
+  const tokenSendAmount = ref("");
   const destinationAddr = ref("");
   const tokenMetaData = ref(null as (IdentitySnapshot | null));
 
@@ -53,7 +53,10 @@
 
   async function maxTokenAmount(){
     try{
-      tokenSendAmount.value = tokenData.value.amount;
+      if(!tokenData.value?.amount) return // should never happen
+      const decimals = tokenMetaData?.value.token?.decimals;
+      const amountTokens = decimals ? tokenData.value.amount / (10 ** decimals) : tokenData.value.amount;
+      tokenSendAmount.value = amountTokens.toString();
     } catch(error) {
       console.log(error)
     }
@@ -61,10 +64,16 @@
   async function sendTokens(wallet: TestNetWallet | null){
     try{
       if(!wallet) return;
+      if(!tokenSendAmount?.value) throw(`Amount tokens to send must be a valid integer`);
+      const decimals = tokenMetaData?.value.token?.decimals;
+      const amountTokens = decimals ? +tokenSendAmount.value * (10 ** decimals) : +tokenSendAmount.value;
+      const validInput =  Number.isInteger(amountTokens);
+      if(!validInput && !decimals) throw(`Amount tokens to send must be a valid integer`);
+      if(!validInput ) throw(`Amount tokens to send must only have ${decimals} decimal places`);
       const { txId } = await wallet.send([
         new TokenSendRequest({
           cashaddr: destinationAddr.value,
-          amount: tokenSendAmount.value,
+          amount: amountTokens,
           tokenId: tokenData.value.tokenId,
         }),
       ]);
@@ -72,6 +81,9 @@
       let message = `Sent ${tokenSendAmount.value} fungible tokens of category ${displayId} to ${destinationAddr.value} \n${explorerUrl}/tx/${txId}`;
       alert(message);
       console.log(message);
+      tokenSendAmount.value = "";
+      destinationAddr.value = "";
+      displaySendTokens.value = false;
     } catch(error){
       console.log(error)
     }
@@ -113,7 +125,9 @@
             </div>
             <div id="childNftCommitment" style="word-break: break-all;" class="hide"></div>
           </div>
-          <div v-if="tokenData?.amount" class="tokenAmount" id="tokenAmount">Token amount: {{ tokenData.amount }}</div>
+          <div v-if="tokenData?.amount" class="tokenAmount" id="tokenAmount">Token amount: 
+            {{ tokenMetaData?.token?.decimals ? tokenData.amount / (10 ** tokenMetaData.token.decimals) : tokenData.amount }} {{ tokenMetaData?.token?.symbol }}
+          </div>
           <div v-if="tokenData?.nfts" class="childNfts" id="childNfts" style=" cursor: pointer;">
             <span class="nrChildNfts" id="nrChildNfts">Number NFTs: {{ tokenData.nfts?.length }}</span>
             <span class="hide" id="showMore" style="margin-left: 10px;">
@@ -146,7 +160,7 @@
         <div v-if="displayTokenInfo" id="tokenInfoDisplay" style="margin-top: 10px;">
           <div id="tokenBegin"></div>
           <div v-if="tokenMetaData?.description" id="tokenDescription"> {{ tokenMetaData.description }} </div>
-          <div v-if="tokenData.amount && tokenMetaData" id="tokenDecimals">Number of decimals: {{ tokenMetaData?.decimals ?? 0 }}</div>
+          <div v-if="tokenData.amount && tokenMetaData" id="tokenDecimals">Number of decimals: {{ tokenMetaData?.token?.decimals ?? 0 }}</div>
           <div id="tokenCommitment"></div>
           <div id="tokenWebLink"></div>
           <div id="onchainTokenInfo" style="white-space: pre-line;"></div>
@@ -164,7 +178,7 @@
             <span class="sendAmountGroup">
               <span style="width: 100%;" class="input-icon input-icon-right">
                 <input v-model="tokenSendAmount" id="sendTokenAmount" placeholder="amount">
-                <i id="sendUnit" style="color: black; width: 70px;">tokens</i>
+                <i id="sendUnit" style="color: black; width: 70px;">{{ tokenMetaData?.token?.symbol ?? "tokens" }}</i>
               </span>
               <button @click="maxTokenAmount()" id="maxButton" style="color: black;">max</button>
             </span>
