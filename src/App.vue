@@ -5,7 +5,7 @@
   import settingsMenu from './components/settingsMenu.vue'
   import HelloWorld from './components/HelloWorld.vue'
   import { ref } from 'vue'
-  import { Wallet, TestNetWallet, BalanceResponse, BCMR, type UtxoI } from "mainnet-js"
+  import { Wallet, TestNetWallet, BalanceResponse, BCMR, type UtxoI, binToHex } from "mainnet-js"
 
   interface TokenData{
     tokenId: string,
@@ -88,11 +88,25 @@
     });
     const cancelWatchTokenTxs = wallet.value?.watchAddressTokenTransactions(async(tx) => {
       if(!wallet.value) return // should never happen
+      const walletPkh = binToHex(wallet.value.getPublicKeyHash() as Uint8Array);
+      const tokenOutput = tx.vout.find(elem => elem.scriptPubKey.hex.includes(walletPkh));
+      const tokenId = tokenOutput?.tokenData?.category;
+      if(!tokenId) return;
+      const previousTokenList = tokenList.value;
+      const isNewCategory = !previousTokenList?.find(elem => elem.tokenId == tokenId);
       const promiseGetFungibleTokens = wallet.value.getAllTokenBalances();
       const promiseGetNFTs = wallet.value.getAllNftTokenBalances();
       const balancePromises: any[] = [promiseGetFungibleTokens, promiseGetNFTs];
       const [resultGetFungibleTokens, resultGetNFTs] = await Promise.all(balancePromises);
       await updateTokenList(resultGetFungibleTokens, resultGetNFTs);
+      // Dynamically import token metadata
+      if(isNewCategory){
+        await importRegistries([tokenId]);
+        // timeout needed for correct rerender
+        await new Promise(resolve => setTimeout(resolve, 10));
+        // Deep copy to trigger watch functions
+        bcmrRegistries.value = [...BCMR.getRegistries()];
+      }
     });
   }
 

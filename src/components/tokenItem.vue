@@ -77,8 +77,7 @@
     }
   }
 
-  watch(bcmrRegistries, async () => {
-    console.log("triggered!");
+  watch(bcmrRegistries, () => {
     tokenMetaData.value = BCMR.getTokenInfo(tokenData.value.tokenId);
   })
 </script>
