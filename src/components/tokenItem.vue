@@ -118,7 +118,10 @@
           <div class="tokenBaseInfo1">
             <div v-if="tokenMetaData?.name" id="tokenName">Name: {{ tokenMetaData?.name }}</div>
             <div id="tokenIdBox" style="word-break: break-all;">
-              TokenId: {{ `${tokenData.tokenId.slice(0, 20)}...${tokenData.tokenId.slice(-10)}` }}
+              TokenId: 
+              <span class="tokenId">
+                 {{ `${tokenData.tokenId.slice(0, 20)}...${tokenData.tokenId.slice(-10)}` }}
+              </span>
               <button type="button" style="background: none; padding: 0; " onclick="copyTokenID(event)">
                 <img class="copyIcon icon" src="/images/copy.svg">
               </button>

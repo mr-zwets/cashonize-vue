@@ -3,6 +3,7 @@
   import bchWalletView from "./components/bchWallet.vue"
   import myTokensView from "./components/myTokens.vue"
   import settingsMenu from './components/settingsMenu.vue'
+  import connectView from './components/walletConnect.vue'
   import HelloWorld from './components/HelloWorld.vue'
   import { ref } from 'vue'
   import { Wallet, TestNetWallet, BalanceResponse, BCMR, type UtxoI, binToHex } from "mainnet-js"
@@ -187,23 +188,25 @@
 </script>
 
 <template>
-  <main style="margin-top: 20px; max-width: 75rem; margin: auto;">
-    <div class="wrapper">
-      <HelloWorld msg="Cashonize-Vue" />
-    </div>
-    <nav v-if="displayView" style="display: flex; margin: 20px 0px;">
+  <header>
+    <img src="\images\cashonize-logo.png" style="height: 85px;" >
+    <nav v-if="displayView" style="display: flex; justify-content: center;">
       <div @click="changeView(1)">BchWallet</div>
       <div @click="changeView(2)">MyTokens</div>
-      <div @click="changeView(3)">
+      <div @click="changeView(3)">WalletConnect</div>
+      <div @click="changeView(4)">
         <img style="vertical-align: text-bottom;" src="images/settings.svg">
       </div>
     </nav>
+  </header>
+  <main style="margin: 20px auto; max-width: 75rem;">
     <Suspense>
       <newWalletView @init-wallet="(arg) => setWallet(arg)"/>
     </Suspense>
     <bchWalletView v-if="displayView == 1" :wallet="(wallet as TestNetWallet | null )" :balance="balance" :nrTokenCategories="nrTokenCategories" :maxAmountToSend="maxAmountToSend" :bchUnit="bchUnit"/>
     <myTokensView v-if="displayView == 2" :wallet="(wallet as TestNetWallet | null )" :tokenList="tokenList" :bcmrRegistries="bcmrRegistries" :chaingraph="chaingraph" :ipfsGateway="ipfsGateway"/>
-    <settingsMenu @change-network="(arg) => changeNetwork(arg)" @change-unit="(arg) => changeUnit(arg)" :wallet="(wallet as TestNetWallet | null )" v-if="displayView == 3" :network="network" :bchUnit="bchUnit"/>
+    <connectView v-if="displayView == 3"/>
+    <settingsMenu v-if="displayView == 4" @change-network="(arg) => changeNetwork(arg)" @change-unit="(arg) => changeUnit(arg)" :wallet="(wallet as TestNetWallet | null )" :network="network" :bchUnit="bchUnit"/>
   </main>
 </template>
 
@@ -212,31 +215,5 @@ nav div{
   padding: 1rem 1.8rem;
   cursor: pointer;
   border-bottom: 2px solid var(--color-lightGrey);
-}
-header {
-  line-height: 1.5;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
 }
 </style>

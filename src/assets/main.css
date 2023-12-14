@@ -13,6 +13,12 @@
 
   font-weight: normal;
 }
+header{
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+}
 
 a,
 .green {
@@ -31,6 +37,17 @@ a,
 .tokenButton {
   margin-left: 40px;
   cursor: pointer;
+}
+.copyIcon{
+  vertical-align: text-bottom;
+  margin-bottom: 1px;
+}
+.copyIcon:hover{
+  cursor: pointer;
+}
+.depositAddr, .tokenId {
+  overflow-wrap: anywhere;
+  color: var(--color-grey);
 }
 
 @media (hover: hover) {

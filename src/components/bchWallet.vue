@@ -57,6 +57,12 @@
 
 <template>
   <fieldset style="margin-top: 20px; padding-top: 2rem; max-width: 75rem; margin: auto;">
+    <div v-if="wallet?.network == 'mainnet'" style="font-size: 1.2em">
+      USD balance:  
+      <span style="color: hsla(160, 100%, 37%, 1);">
+        {{ balance && balance.usd != undefined ? balance.usd + " $": "" }}
+      </span>
+    </div>
     <div>
       BCH balance:  
       <span style="color: hsla(160, 100%, 37%, 1);">
@@ -69,8 +75,16 @@
         {{ nrTokenCategories != undefined ? nrTokenCategories + " different token categories" : ""}}
       </span>
     </div>
-    <div> {{ wallet?.address ?? "" }} </div>
-    <div> {{ wallet?.tokenaddr ?? "" }} </div>
+    <div>
+      BCH address: 
+      <span class="depositAddr">{{ wallet?.address ?? "" }} </span>
+      <img class="copyIcon" src="/images/copyGrey.svg">
+    </div>
+    <div>
+      Token address:
+      <span class="depositAddr">{{ wallet?.tokenaddr ?? "" }}</span>
+      <img class="copyIcon" src="/images/copyGrey.svg">
+    </div>
     <qr-code id="qrCode" :contents="displayeBchQr? wallet?.address : wallet?.tokenaddr" style="display: block; width: 240px; height: 240px; margin: 5px auto 0 auto;">
       <img :src="displayeBchQr? 'images/bch-icon.png':'images/tokenicon.png'" slot="icon" /> <!-- eslint-disable-line -->
     </qr-code>
