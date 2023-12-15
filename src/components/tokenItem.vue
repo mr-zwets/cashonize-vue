@@ -1,14 +1,10 @@
 <script setup lang="ts">
   import { ref, onMounted, watch, toRefs, computed } from 'vue';
-  import { Wallet, TestNetWallet, TokenSendRequest, BCMR, type UtxoI } from "mainnet-js"
+  import { Wallet, TestNetWallet, TokenSendRequest, BCMR } from "mainnet-js"
   // @ts-ignore
   import { createIcon } from '@download/blockies';
-
-  interface TokenData{
-    tokenId: string,
-    amount?: number,
-    nfts?: UtxoI[]
-  }
+  import type { TokenData } from "../interfaces/interfaces"
+  import type { IdentitySnapshot } from "mainnet-js/dist/module/wallet/bcmr-v2.schema"
 
   const props = defineProps<{
     wallet: Wallet | TestNetWallet | null,
@@ -55,7 +51,7 @@
     try{
       if(!tokenData.value?.amount) return // should never happen
       const decimals = tokenMetaData?.value.token?.decimals;
-      const amountTokens = decimals ? tokenData.value.amount / (10 ** decimals) : tokenData.value.amount;
+      let amountTokens = decimals ? Number(tokenData.value.amount) / (10 ** decimals) : tokenData.value.amount;
       tokenSendAmount.value = amountTokens.toString();
     } catch(error) {
       console.log(error)
@@ -129,7 +125,7 @@
             <div id="childNftCommitment" style="word-break: break-all;" class="hide"></div>
           </div>
           <div v-if="tokenData?.amount" class="tokenAmount" id="tokenAmount">Token amount: 
-            {{ tokenMetaData?.token?.decimals ? tokenData.amount / (10 ** tokenMetaData.token.decimals) : tokenData.amount }} {{ tokenMetaData?.token?.symbol }}
+            {{ tokenMetaData?.token?.decimals ?  Number(tokenData.amount) / (10 ** tokenMetaData.token.decimals) : tokenData.amount }} {{ tokenMetaData?.token?.symbol }}
           </div>
           <div v-if="tokenData?.nfts" class="childNfts" id="childNfts" style=" cursor: pointer;">
             <span class="nrChildNfts" id="nrChildNfts">Number NFTs: {{ tokenData.nfts?.length }}</span>

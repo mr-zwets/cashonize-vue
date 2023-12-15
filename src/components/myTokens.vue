@@ -1,13 +1,9 @@
 
 <script setup lang="ts">
   import tokenItem from './tokenItem.vue'
-  import { Wallet, TestNetWallet, type UtxoI } from "mainnet-js"
+  import { Wallet, TestNetWallet } from "mainnet-js"
+  import type { TokenData } from "../interfaces/interfaces"
 
-  interface TokenData{
-    tokenId: string,
-    amount?: number,
-    nfts?: UtxoI[]
-  }
   defineProps<{
     wallet: Wallet | TestNetWallet | null,
     tokenList: Array<TokenData> | null,

@@ -4,15 +4,9 @@
   import myTokensView from "./components/myTokens.vue"
   import settingsMenu from './components/settingsMenu.vue'
   import connectView from './components/walletConnect.vue'
-  import HelloWorld from './components/HelloWorld.vue'
   import { ref } from 'vue'
-  import { Wallet, TestNetWallet, BalanceResponse, BCMR, type UtxoI, binToHex } from "mainnet-js"
-
-  interface TokenData{
-    tokenId: string,
-    amount?: number,
-    nfts?: UtxoI[]
-  }
+  import { Wallet, TestNetWallet, BalanceResponse, BCMR, binToHex } from "mainnet-js"
+  import type { TokenData } from "./interfaces/interfaces"
 
   const nameWallet = "mywallet";
   const defaultChaingraph = "https://gql.chaingraph.pat.mn/v1/graphql";
