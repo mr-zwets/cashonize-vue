@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ref, toRefs, computed } from 'vue'
-  import { Wallet, TestNetWallet, BalanceResponse  } from "mainnet-js"
+  import { Wallet, TestNetWallet, BalanceResponse, convert } from "mainnet-js"
   import { defineCustomElements } from '@bitjson/qr-code';
 
   const props = defineProps<{
@@ -22,6 +22,7 @@
   // reactive state
   const displayeBchQr = ref(true);
   const bchSendAmount = ref(undefined as (number | undefined));
+  const usdSendAmount = ref(undefined as (number | undefined));
   const destinationAddr = ref("");
 
   const explorerUrlMainnet = "https://explorer.bitcoinunlimited.info";
@@ -31,9 +32,28 @@
   function switchAddressTypeQr(){
     displayeBchQr.value = !displayeBchQr.value;
   }
+  async function setUsdAmount() {
+    if(typeof bchSendAmount.value != 'number'){
+      usdSendAmount.value = undefined
+      return
+    }
+    const newUsdValue = await convert(bchSendAmount.value, bchUnit.value, "usd");
+    usdSendAmount.value = Number(newUsdValue.toFixed(2));
+  }
+  async function setBchAmount() {
+    if(typeof usdSendAmount.value != 'number'){
+      bchSendAmount.value = undefined
+      return
+    }
+    const newBchValue = await convert(usdSendAmount.value, "usd", bchUnit.value);
+    bchSendAmount.value = Number(newBchValue);
+  }
   async function useMaxBchAmount(){
     try{
-      if(maxAmountToSend?.value && maxAmountToSend?.value[bchUnit.value]) bchSendAmount.value = maxAmountToSend.value[bchUnit.value];
+      if(maxAmountToSend?.value && maxAmountToSend?.value[bchUnit.value]){
+        bchSendAmount.value = maxAmountToSend.value[bchUnit.value];
+        setUsdAmount()
+      }
       else throw("expected a number");
     } catch(error) {
       console.log(error)
@@ -63,18 +83,18 @@
         {{ balance && balance.usd != undefined ? balance.usd + " $": "" }}
       </span>
     </div>
-    <div>
+    <span>
       BCH balance:  
       <span style="color: hsla(160, 100%, 37%, 1);">
         {{ balance && balance[bchUnit] != undefined ? balance[bchUnit] + displayUnitLong : "" }}
       </span>
-    </div>
-    <div>
-      Wallet token balance: 
+    </span>
+    <span>
+      , Tokens: 
       <span style="color: hsla(160, 100%, 37%, 1);">
-        {{ nrTokenCategories != undefined ? nrTokenCategories + " different token categories" : ""}}
+        {{ nrTokenCategories != undefined ? nrTokenCategories + " different categories" : ""}}
       </span>
-    </div>
+    </span>
     <div>
       BCH address: 
       <span class="depositAddr">{{ wallet?.address ?? "" }} </span>
@@ -98,14 +118,18 @@
       <span class="addressInput">
         <input v-model="destinationAddr" id="destinationAddr" placeholder="address">
       </span>
-      <span class="sendAmountGroup">
-        <span style="width: 100%;" class="input-icon input-icon-right">
-          <input v-model="bchSendAmount" id="sendAmount" type="text" placeholder="amount">
-          <i id="sendUnit" style="color: black;">BCH</i>
+      <span class="sendAmountGroup" style="display: flex; margin-top: 8px;">
+        <span style="position: relative; width: 50%;">
+          <input v-model="bchSendAmount" @input="setUsdAmount" id="sendAmount" type="number" placeholder="amount">
+          <i class="input-icon" style="color: black;">{{ bchUnit.toLocaleUpperCase() }}</i>
         </span>
-        <button @click="useMaxBchAmount()" style="color: black;">max</button>
+        <span style="position: relative; width: 50%; margin-left: 5px;">
+          <input v-model="usdSendAmount" @input="setBchAmount" id="sendAmount" type="number" placeholder="amount">
+          <i class="input-icon" style="color: black;">USD $</i>
+        </span> 
+            <button @click="useMaxBchAmount()" style="margin-left: 5px;">max</button>
       </span>
     </div>
-    <input @click="sendBch(wallet)" type="button" class="primaryButton" id="send" value="Send">
+    <input @click="sendBch(wallet)" type="button" class="primaryButton" id="send" value="Send" style="margin-top: 8px;">
   </fieldset>
 </template>
