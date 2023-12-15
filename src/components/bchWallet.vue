@@ -114,11 +114,9 @@
   </fieldset>
   <fieldset style="margin-top: 15px;">
     <legend>Send BCH to</legend>
-    <div class="inputGroup">
-      <span class="addressInput">
-        <input v-model="destinationAddr" id="destinationAddr" placeholder="address">
-      </span>
-      <span class="sendAmountGroup" style="display: flex; margin-top: 8px;">
+    <div>
+      <input v-model="destinationAddr" id="destinationAddr" placeholder="address">
+      <span class="sendAmountGroup">
         <span style="position: relative; width: 50%;">
           <input v-model="bchSendAmount" @input="setUsdAmount" id="sendAmount" type="number" placeholder="amount">
           <i class="input-icon" style="color: black;">{{ bchUnit.toLocaleUpperCase() }}</i>

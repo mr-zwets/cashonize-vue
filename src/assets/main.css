@@ -41,6 +41,7 @@ a,
 .copyIcon{
   vertical-align: text-bottom;
   margin-bottom: 1px;
+  margin-left: 5px;
 }
 .copyIcon:hover{
   cursor: pointer;
@@ -48,6 +49,10 @@ a,
 .depositAddr, .tokenId {
   overflow-wrap: anywhere;
   color: var(--color-grey);
+}
+.sendAmountGroup {
+  display: flex;
+  margin-top: 8px;
 }
 .input-icon {
   position: absolute;
@@ -69,6 +74,42 @@ input::-webkit-inner-spin-button {
 /* Firefox */
 input[type=number] {
   -moz-appearance: textfield;
+}
+.item {
+  margin: 10px;
+}
+.tokenInfo {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+}
+.tokenBaseInfo {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+.tokenIcon {
+  margin-right: 10px;
+}
+.tokenBaseInfo1 {
+  width: 370px;
+  display: block;
+}
+.tokenAmount {
+  margin-left: 30px;
+  max-width: 225px;
+}
+.addressInput {
+  margin-right: 14px;
+  width: 50%;
+}
+.actionBar {
+  margin-top: 15px;
+  margin-bottom: 5px;
+}
+.inputGroup {
+  margin: 0 0 10px;
+  display: flex;
 }
 
 @media (hover: hover) {

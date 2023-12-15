@@ -170,18 +170,18 @@
         </div>
         <div v-if="displaySendTokens" id="tokenSend" style="margin-top: 10px;">
           Send these tokens to
-          <p class="inputGroup">
-            <span class="addressInput">
+          <div class="inputGroup">
+            <div class="addressInput">
               <input v-model="destinationAddr" id="tokenAddress" placeholder="token address">
-            </span>
-            <span class="sendAmountGroup">
-              <span style="width: 100%;" class="input-icon input-icon-right">
+            </div>
+            <div style="display: flex; width: 50%;">
+              <span style="width: 100%; position: relative;">
                 <input v-model="tokenSendAmount" id="sendTokenAmount" placeholder="amount">
-                <i id="sendUnit" style="color: black; width: 70px;">{{ tokenMetaData?.token?.symbol ?? "tokens" }}</i>
+                <i id="sendUnit" class="input-icon" style="width: 70px;">{{ tokenMetaData?.token?.symbol ?? "tokens" }}</i>
               </span>
               <button @click="maxTokenAmount()" id="maxButton" style="color: black;">max</button>
-            </span>
-          </p>
+            </div>
+          </div>
           <input @click="sendTokens(wallet)" type="button" id="sendSomeButton" class="primaryButton" value="Send">
         </div><!--
         <div id="nftSend"  class="hide"  style="margin-top: 10px;">
