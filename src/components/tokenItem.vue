@@ -16,6 +16,7 @@
   const { wallet, tokenData, bcmrRegistries, ipfsGateway } = toRefs(props);
 
   const displaySendTokens = ref(false);
+  const displaySendNft = ref(false);
   const displayTokenInfo = ref(false)
   const tokenSendAmount = ref("");
   const destinationAddr = ref("");
@@ -88,6 +89,14 @@
       console.log(error)
     }
   }
+  async function sendNft(wallet: TestNetWallet | null){
+    try{
+      if(!wallet) return;
+      alert("tried to send NFT!");
+    } catch(error){
+      console.log(error)
+    }
+  }
 
   watch(bcmrRegistries, () => {
     tokenMetaData.value = BCMR.getTokenInfo(tokenData.value.tokenId);
@@ -108,7 +117,7 @@
       </div>
       <div class="tokenInfo">
         <div v-if="!tokenMetaData?.uris?.icon" id="genericTokenIcon" class="tokenIcon"></div>
-        <img v-if="tokenMetaData?.uris?.icon" id="tokenIcon" class="tokenIcon" style=" height: 48px; width: 48px; border-radius: 50%;" :src="httpsUrlTokenIcon">
+        <img v-if="tokenMetaData?.uris?.icon" id="tokenIcon" class="tokenIcon" style="width: 48px; border-radius: 50%;" :src="httpsUrlTokenIcon">
         <div v-if="tokenData?.nft" id="tokenIconModal" class="modal">
           <span class="close">&times;</span>
           <img class="modal-content" id="imgTokenIcon" style="width: 400px; max-width: 80%;">
@@ -129,7 +138,7 @@
           <div v-if="tokenData?.amount" class="tokenAmount" id="tokenAmount">Token amount: 
             {{ tokenMetaData?.token?.decimals ?  Number(tokenData.amount) / (10 ** tokenMetaData.token.decimals) : tokenData.amount }} {{ tokenMetaData?.token?.symbol }}
           </div>
-          <div v-if="tokenData?.nfts" class="childNfts" id="childNfts" style=" cursor: pointer;">
+          <div v-if="(tokenData.nfts?.length ?? 0) > 1" class="childNfts" id="childNfts" style=" cursor: pointer; margin-left: 35px;">
             <span class="nrChildNfts" id="nrChildNfts">Number NFTs: {{ tokenData.nfts?.length }}</span>
             <span class="hide" id="showMore" style="margin-left: 10px;">
               <img id="showIcon" class="icon" style="vertical-align: text-bottom;" src="/images/chevron-square-down.svg">
@@ -140,11 +149,15 @@
       </div>
 
       <div class="actionBar">
-        <span @click="displaySendTokens = !displaySendTokens" style="margin-left: 10px;" class="tokenButton" id="sendButton">
+        <span v-if="!tokenData?.nfts" @click="displaySendTokens = !displaySendTokens" style="margin-left: 10px;" id="sendButton">
           <img id="sendIcon" class="icon" src="/images/send.svg"> send </span>
-        <span @click="displayTokenInfo = !displayTokenInfo" class="tokenButton" id="infoButton">
+        <span v-if="tokenData?.nfts?.length == 1" @click="displaySendNft = !displaySendNft" style="margin-left: 10px;" id="sendButton">
+          <img id="sendIcon" class="icon" src="/images/send.svg"> send </span>
+        <span @click="displayTokenInfo = !displayTokenInfo" id="infoButton">
           <img id="infoIcon" class="icon" src="/images/info.svg"> info
         </span>
+        <span v-if="(tokenData.nfts?.length ?? 0) > 1" style="margin-left: 10px;" id="sendButton">
+          <img id="sendIcon" class="icon" src="/images/send.svg"> transfer all </span>
         <span v-if="tokenData?.mint" class="tokenButton hide" id="mintButton">
           <img id="mintIcon" class="icon" src="/images/hammer.svg"> mint NFTs
         </span>
@@ -153,7 +166,7 @@
           <span class="hidemobile">burn NFT</span>
           <span class="showmobile">burn</span>
         </span>
-        <span v-if="tokenData?.auth" class="tokenButton" style="white-space: nowrap;" id="authButton">
+        <span v-if="tokenData?.auth" style="white-space: nowrap;" id="authButton">
           <img id="authIcon" class="icon" src="/images/shield.svg">
           <span class="hidemobile">auth transfer</span>
           <span class="showmobile">auth</span>
@@ -185,15 +198,15 @@
             </div>
           </div>
           <input @click="sendTokens(wallet)" type="button" id="sendSomeButton" class="primaryButton" value="Send">
-        </div><!--
-        <div id="nftSend"  class="hide"  style="margin-top: 10px;">
+        </div>
+        <div v-if="displaySendNft" id="nftSend" style="margin-top: 10px;">
           Send this NFT to
           <p class="grouped">
             <input id="tokenAddress" placeholder="tokenAddress">
-            <input type="button" class="primaryButton" id="sendNFT" value="Send NFT">
+            <input @click="sendNft(wallet)" type="button" class="primaryButton" id="sendNFT" value="Send NFT">
           </p>
         </div>
-        <div id="nftMint"  class="hide"  style="margin-top: 10px;">
+        <!--<div id="nftMint"  class="hide"  style="margin-top: 10px;">
           Mint a number of (unique) NFTs to a specific address
           <div>
             <input type="checkbox" checked id="uniqueNFTs" onchange="disableInputfield(event)" style="margin: 0px; vertical-align: text-bottom;">

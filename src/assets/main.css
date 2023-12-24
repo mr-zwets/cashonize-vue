@@ -34,10 +34,6 @@ a,
 .icon {
   vertical-align: text-bottom;
 }
-.tokenButton {
-  margin-left: 40px;
-  cursor: pointer;
-}
 .copyIcon{
   vertical-align: text-bottom;
   margin-bottom: 1px;
@@ -110,6 +106,13 @@ input[type=number] {
 .inputGroup {
   margin: 0 0 10px;
   display: flex;
+}
+.actionBar span {
+  margin: 0 20px;
+  cursor: pointer;
+}
+.actionBar :first-of-type {
+  margin-left: 0;
 }
 
 @media (hover: hover) {
