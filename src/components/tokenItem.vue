@@ -47,6 +47,10 @@
     tokenMetaData.value = BCMR.getTokenInfo(tokenData.value.tokenId)
   })
 
+  function copyTokenId(){
+    navigator.clipboard.writeText(tokenData.value.tokenId);
+  }
+
   async function maxTokenAmount(){
     try{
       if(!tokenData.value?.amount) return // should never happen
@@ -118,9 +122,7 @@
               <span class="tokenId">
                  {{ `${tokenData.tokenId.slice(0, 20)}...${tokenData.tokenId.slice(-10)}` }}
               </span>
-              <button type="button" style="background: none; padding: 0; " onclick="copyTokenID(event)">
-                <img class="copyIcon icon" src="/images/copy.svg">
-              </button>
+              <img class="copyIcon" src="/images/copyGrey.svg" @click="copyTokenId">
             </div>
             <div id="childNftCommitment" style="word-break: break-all;" class="hide"></div>
           </div>

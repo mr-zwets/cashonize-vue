@@ -32,6 +32,9 @@
   function switchAddressTypeQr(){
     displayeBchQr.value = !displayeBchQr.value;
   }
+  function copyToClipboard(item: string|undefined){
+    if(item) navigator.clipboard.writeText(item);
+  }
   async function setUsdAmount() {
     if(typeof bchSendAmount.value != 'number'){
       usdSendAmount.value = undefined
@@ -98,12 +101,12 @@
     <div>
       BCH address: 
       <span class="depositAddr">{{ wallet?.address ?? "" }} </span>
-      <img class="copyIcon" src="/images/copyGrey.svg">
+      <img class="copyIcon" src="/images/copyGrey.svg" @click="() => copyToClipboard(wallet?.address)">
     </div>
     <div>
       Token address:
       <span class="depositAddr">{{ wallet?.tokenaddr ?? "" }}</span>
-      <img class="copyIcon" src="/images/copyGrey.svg">
+      <img class="copyIcon" src="/images/copyGrey.svg" @click="() => copyToClipboard(wallet?.tokenaddr)">
     </div>
     <qr-code id="qrCode" :contents="displayeBchQr? wallet?.address : wallet?.tokenaddr" style="display: block; width: 240px; height: 240px; margin: 5px auto 0 auto;">
       <img :src="displayeBchQr? 'images/bch-icon.png':'images/tokenicon.png'" slot="icon" /> <!-- eslint-disable-line -->
