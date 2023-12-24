@@ -185,11 +185,11 @@
   <header>
     <img src="\images\cashonize-logo.png" style="height: 85px;" >
     <nav v-if="displayView" style="display: flex; justify-content: center;">
-      <div @click="changeView(1)">BchWallet</div>
-      <div @click="changeView(2)">MyTokens</div>
-      <div @click="changeView(3)">WalletConnect</div>
+      <div @click="changeView(1)" v-bind:style="displayView == 1 ? {color: 'var(--color-primary'} : ''">BchWallet</div>
+      <div @click="changeView(2)" v-bind:style="displayView == 2 ? {color: 'var(--color-primary'} : ''">MyTokens</div>
+      <div @click="changeView(3)" v-bind:style="displayView == 3 ? {color: 'var(--color-primary'} : ''">WalletConnect</div>
       <div @click="changeView(4)">
-        <img style="vertical-align: text-bottom;" src="images/settings.svg">
+        <img style="vertical-align: text-bottom;" v-bind:src="displayView == 4 ? 'images/settingsGreen.svg' : 'images/settings.svg'">
       </div>
     </nav>
   </header>
