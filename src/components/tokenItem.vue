@@ -144,20 +144,20 @@
       <legend>
         <div id="tokenType"></div>
       </legend>
-      <div v-if="tokenData?.verified" id="verified" class="verified">
+      <!--<div v-if="tokenData?.verified" id="verified" class="verified">
         <div class="tooltip">
           <img class="verifiedIcon" src="/images/check-circle.svg">
           <span class="tooltiptext">Verified</span>
         </div>
-      </div>
+      </div>-->
       <div class="tokenInfo">
         <div v-if="!tokenMetaData?.uris?.icon" id="genericTokenIcon" class="tokenIcon"></div>
         <img v-if="tokenMetaData?.uris?.icon" id="tokenIcon" class="tokenIcon" style="width: 48px; border-radius: 50%;" :src="httpsUrlTokenIcon">
-        <div v-if="tokenData?.nft" id="tokenIconModal" class="modal">
+        <!--<div v-if="tokenData?.nft" id="tokenIconModal" class="modal">
           <span class="close">&times;</span>
           <img class="modal-content" id="imgTokenIcon" style="width: 400px; max-width: 80%;">
           <div id="caption"></div>
-        </div>
+        </div>-->
         <div class="tokenBaseInfo">
           <div class="tokenBaseInfo1">
             <div v-if="tokenName" id="tokenName">Name: {{ tokenName }}</div>
@@ -193,7 +193,7 @@
         </span>
         <span v-if="(tokenData.nfts?.length ?? 0) > 1" style="margin-left: 10px;" id="sendButton">
           <img id="sendIcon" class="icon" src="/images/send.svg"> transfer all </span>
-        <span v-if="tokenData?.mint" class="tokenButton hide" id="mintButton">
+        <!--<span v-if="tokenData?.mint" class="tokenButton hide" id="mintButton">
           <img id="mintIcon" class="icon" src="/images/hammer.svg"> mint NFTs
         </span>
         <span v-if="tokenData?.nft" class="tokenButton hide" style="white-space: nowrap;" id="burnButton">
@@ -205,7 +205,7 @@
           <img id="authIcon" class="icon" src="/images/shield.svg">
           <span class="hidemobile">auth transfer</span>
           <span class="showmobile">auth</span>
-        </span>
+        </span>-->
         <div v-if="displayTokenInfo" id="tokenInfoDisplay" style="margin-top: 10px;">
           <div id="tokenBegin"></div>
           <div v-if="tokenMetaData?.description" id="tokenDescription"> {{ tokenMetaData.description }} </div>
@@ -213,10 +213,10 @@
           <div id="tokenCommitment"></div>
           <div id="tokenWebLink"></div>
           <div id="onchainTokenInfo" style="white-space: pre-line;"></div>
-          <details v-if="tokenData?.nft" id="showAttributes" class="hide">
+          <!--<details v-if="tokenData?.nft" id="showAttributes" class="hide">
             <summary>NFT attributes</summary>
             <div id="nftAttributes" style="white-space: pre-wrap;"></div>
-          </details> 
+          </details>-->
         </div>
         <div v-if="displaySendTokens" id="tokenSend" style="margin-top: 10px;">
           Send these tokens to
