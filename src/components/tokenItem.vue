@@ -27,7 +27,13 @@
   const destinationAddr = ref("");
   const tokenMetaData = ref(null as (IdentitySnapshot | null));
 
-  const isSingleNft = computed(() => tokenData.value.nfts?.length == 1)
+  const isSingleNft = computed(() => tokenData.value.nfts?.length == 1);
+  const nftMetadata = computed(() => {
+    if(isSingleNft.value) return
+    const nftData = tokenData.value.nfts?.[0]
+    const commitment = nftData?.token?.commitment;
+    return tokenMetaData?.value?.token?.nfts?.parse?.types[commitment ?? ""];
+  })
   const httpsUrlTokenIcon = computed(() => {
     let tokenIconUri = tokenMetaData.value?.uris?.icon;
     if(isSingleNft.value){
@@ -272,10 +278,12 @@
           <div v-if="tokenMetaData?.uris?.web" id="tokenWebLink">
             Token web link: <a :href="tokenMetaData?.uris?.web" target="_blank">{{ tokenMetaData?.uris?.web }}</a></div>
           <div id="onchainTokenInfo" style="white-space: pre-line;"></div>
-          <!--<details v-if="tokenData?.nft" id="showAttributes" class="hide">
+          <details v-if="isSingleNft && nftMetadata?.extensions?.attributes" style="cursor:pointer;">
             <summary>NFT attributes</summary>
-            <div id="nftAttributes" style="white-space: pre-wrap;"></div>
-          </details>-->
+            <div v-for="(attributeValue, attributeKey) in nftMetadata?.extensions?.attributes" :key="((attributeValue as string) + (attributeValue as string))" style="white-space: pre-wrap;">
+              {{ attributeKey }}: {{ attributeValue ? attributeValue : "none" }}
+            </div>
+          </details>
         </div>
         <div v-if="displaySendTokens" id="tokenSend" style="margin-top: 10px;">
           Send these tokens to

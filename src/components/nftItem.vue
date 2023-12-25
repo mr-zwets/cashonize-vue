@@ -166,7 +166,7 @@
           <details v-if="nftMetadata?.extensions?.attributes" style="cursor:pointer;">
             <summary>NFT attributes</summary>
             <div v-for="(attributeValue, attributeKey) in nftMetadata?.extensions?.attributes" :key="((attributeValue as string) + (attributeValue as string))" style="white-space: pre-wrap;">
-              {{ attributeKey }}: {{ attributeValue }}
+              {{ attributeKey }}: {{ attributeValue ? attributeValue : "none" }}
             </div>
           </details>
         </div>
