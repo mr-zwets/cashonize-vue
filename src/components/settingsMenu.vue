@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import Toggle from '@vueform/toggle'
-  import { ref, toRefs, defineEmits } from 'vue'
+  import { ref, toRefs } from 'vue'
   import { Wallet, TestNetWallet  } from "mainnet-js"
 
   const props = defineProps<{

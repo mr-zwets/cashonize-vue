@@ -4,7 +4,7 @@
   // @ts-ignore
   import { createIcon } from '@download/blockies';
   import type { TokenData } from "../interfaces/interfaces"
-  import type { IdentitySnapshot } from "mainnet-js/dist/module/wallet/bcmr-v2.schema"
+  import type { IdentitySnapshot } from "mainnet-js"
 
   const props = defineProps<{
     wallet: Wallet | TestNetWallet | null,
@@ -23,14 +23,14 @@
   const tokenMetaData = ref(null as (IdentitySnapshot | null));
 
   const httpsUrlTokenIcon = computed(() => {
-    let tokenIconUri = tokenMetaData?.value.uris?.icon;
+    let tokenIconUri = tokenMetaData.value?.uris?.icon;
     if(tokenData.value.nfts?.length == 1){
       const commitment = tokenData.value.nfts?.[0].token?.commitment;
-      const nftMetadata = tokenMetaData?.value.token?.nfts?.parse?.types[commitment ?? ""];
+      const nftMetadata = tokenMetaData.value?.token?.nfts?.parse?.types[commitment ?? ""];
       const nftIconUri = nftMetadata?.uris?.icon;
       if(nftIconUri) tokenIconUri = nftIconUri;
     }
-    if(tokenIconUri.startsWith('ipfs://')){
+    if(tokenIconUri?.startsWith('ipfs://')){
       return ipfsGateway.value + tokenIconUri.slice(7);
     }
     return tokenIconUri;
@@ -61,8 +61,7 @@
     const template = document.querySelector(`#id${tokenData.value.tokenId.slice(0, 10)}`);
     const iconDiv = template?.querySelector("#genericTokenIcon")
     iconDiv?.appendChild(icon);
-
-    tokenMetaData.value = BCMR.getTokenInfo(tokenData.value.tokenId)
+    tokenMetaData.value = BCMR.getTokenInfo(tokenData.value.tokenId) ?? null;
   })
 
   function copyTokenId(){
@@ -72,7 +71,7 @@
   async function maxTokenAmount(){
     try{
       if(!tokenData.value?.amount) return // should never happen
-      const decimals = tokenMetaData?.value.token?.decimals;
+      const decimals = tokenMetaData.value?.token?.decimals;
       let amountTokens = decimals ? Number(tokenData.value.amount) / (10 ** decimals) : tokenData.value.amount;
       tokenSendAmount.value = amountTokens.toString();
     } catch(error) {
@@ -83,7 +82,7 @@
     try{
       if(!wallet) return;
       if(!tokenSendAmount?.value) throw(`Amount tokens to send must be a valid integer`);
-      const decimals = tokenMetaData?.value.token?.decimals;
+      const decimals = tokenMetaData.value?.token?.decimals;
       const amountTokens = decimals ? +tokenSendAmount.value * (10 ** decimals) : +tokenSendAmount.value;
       const validInput =  Number.isInteger(amountTokens);
       if(!validInput && !decimals) throw(`Amount tokens to send must be a valid integer`);
@@ -134,7 +133,7 @@
   }
 
   watch(bcmrRegistries, () => {
-    tokenMetaData.value = BCMR.getTokenInfo(tokenData.value.tokenId);
+    tokenMetaData.value = BCMR.getTokenInfo(tokenData.value.tokenId) ?? null;
   })
 </script>
 

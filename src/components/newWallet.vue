@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref, defineEmits } from "vue"
+  import { ref } from "vue"
   import { Wallet, TestNetWallet, BaseWallet, Config } from "mainnet-js"
   import { IndexedDBProvider } from "@mainnet-cash/indexeddb-storage"
 
