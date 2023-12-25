@@ -13,8 +13,9 @@
     chaingraph: string
     ipfsGateway: string
     explorerUrl: string
+    id: string
   }>()
-  const { wallet, nftData, tokenMetaData, ipfsGateway, explorerUrl } = toRefs(props);
+  const { wallet, nftData, tokenMetaData, ipfsGateway, explorerUrl, id } = toRefs(props);
 
   const displaySendNft = ref(false);
   const displayNftInfo = ref(false);
@@ -46,6 +47,21 @@
     const nftDescription = nftMetadata.value?.description;
     if(tokenDescription) tokenDescription = nftDescription;
     return tokenDescription;
+  })
+
+  onMounted(() => {
+    const tokenId = nftData.value.token?.tokenId as string;
+    let icon = createIcon({
+      seed: tokenId,
+      size: 12,
+      scale: 4,
+      spotcolor: '#000'
+    });
+    icon.style = "display: block; border-radius: 50%;"
+    const template = document.querySelector(`#${id.value}`);
+    const iconDiv = template?.querySelector("#genericTokenIcon")
+    iconDiv?.appendChild(icon);
+    tokenMetaData.value = BCMR.getTokenInfo(tokenId) ?? null;
   })
 
   async function sendNft(wallet: TestNetWallet | null){
@@ -96,7 +112,7 @@
 </script>
 
 <template id="nft-template">
-  <div class="item">
+  <div class="item" :id="id">
     <fieldset style="position: relative;">
       <legend>
         <div id="tokenType"></div>

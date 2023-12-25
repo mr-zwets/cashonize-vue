@@ -343,7 +343,7 @@
 
     <div v-if="displayChildNfts">
       <div v-for="(nft, index) in tokenData.nfts" :key="'nft'+tokenData.tokenId.slice(0,4) + index">
-        <nftItem :wallet="wallet" :nftData="nft" :tokenMetaData="tokenMetaData" :chaingraph="chaingraph" :ipfsGateway="ipfsGateway" :explorerUrl="explorerUrl"/>
+        <nftItem :wallet="wallet" :nftData="nft" :tokenMetaData="tokenMetaData" :chaingraph="chaingraph" :ipfsGateway="ipfsGateway" :explorerUrl="explorerUrl" :id="'nft'+tokenData.tokenId.slice(0,4) + index"/>
       </div>
     </div>
   </div>
