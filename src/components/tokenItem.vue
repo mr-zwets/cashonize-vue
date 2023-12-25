@@ -184,7 +184,7 @@
           <div v-if="(tokenData.nfts?.length ?? 0) > 1" @click="displayChildNfts = !displayChildNfts" class="showChildNfts">
             <span class="nrChildNfts" id="nrChildNfts">Number NFTs: {{ tokenData.nfts?.length }}</span>
             <span class="hide" id="showMore" style="margin-left: 10px;">
-              <img id="showIcon" class="icon" style="vertical-align: text-bottom;" src="/images/chevron-square-down.svg">
+              <img class="icon" :src="displayChildNfts? '/images/chevron-square-up.svg':'/images/chevron-square-down.svg'">
             </span>
           </div>
 
@@ -219,7 +219,8 @@
           <div v-if="tokenMetaData?.description" id="tokenDescription"> {{ tokenMetaData.description }} </div>
           <div v-if="tokenData.amount && tokenMetaData" id="tokenDecimals">Number of decimals: {{ tokenMetaData?.token?.decimals ?? 0 }}</div>
           <div id="tokenCommitment"></div>
-          <div id="tokenWebLink"></div>
+          <div v-if="tokenMetaData?.uris?.web" id="tokenWebLink">
+            Token web link: <a :href="tokenMetaData?.uris?.web" target="_blank">{{ tokenMetaData?.uris?.web }}</a></div>
           <div id="onchainTokenInfo" style="white-space: pre-line;"></div>
           <!--<details v-if="tokenData?.nft" id="showAttributes" class="hide">
             <summary>NFT attributes</summary>

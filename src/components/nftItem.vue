@@ -17,14 +17,16 @@
   const { wallet, nftData, tokenMetaData, ipfsGateway, explorerUrl } = toRefs(props);
 
   const displaySendNft = ref(false);
-  const displayTokenInfo = ref(false);
+  const displayNftInfo = ref(false);
   const destinationAddr = ref("");
 
+  const nftMetadata = computed(() => {
+    const commitment = nftData.value?.token?.commitment;
+    return tokenMetaData?.value?.token?.nfts?.parse?.types[commitment ?? ""];
+  })
   const httpsUrlTokenIcon = computed(() => {
     let tokenIconUri = tokenMetaData.value?.uris?.icon;
-    const commitment = nftData.value?.token?.commitment;
-    const nftMetadata = tokenMetaData.value?.token?.nfts?.parse?.types[commitment ?? ""];
-    const nftIconUri = nftMetadata?.uris?.icon;
+    const nftIconUri = nftMetadata.value?.uris?.icon;
     if(nftIconUri) tokenIconUri = nftIconUri;
     if(tokenIconUri?.startsWith('ipfs://')){
       return ipfsGateway.value + tokenIconUri.slice(7);
@@ -33,11 +35,15 @@
   })
   const tokenName = computed(() => {
     let tokenName = tokenMetaData.value?.name;
-    const commitment = nftData.value?.token?.commitment;
-    const nftMetadata = tokenMetaData?.value?.token?.nfts?.parse?.types[commitment ?? ""];
-    const nftName = nftMetadata?.name;
+    const nftName = nftMetadata.value?.name;
     if(nftName) tokenName = nftName;
     return tokenName;
+  })
+  const nftDescription = computed(() => {
+    let tokenDescription = tokenMetaData.value?.description;
+    const nftDescription = nftMetadata.value?.description;
+    if(tokenDescription) tokenDescription = nftDescription;
+    return tokenDescription;
   })
 
   async function sendNft(wallet: TestNetWallet | null){
@@ -98,7 +104,7 @@
       <div class="actionBar">
         <span @click="displaySendNft = !displaySendNft" style="margin-left: 10px;" id="sendButton">
           <img id="sendIcon" class="icon" src="/images/send.svg"> send </span>
-        <span @click="displayTokenInfo = !displayTokenInfo" id="infoButton">
+        <span @click="displayNftInfo = !displayNftInfo" id="infoButton">
           <img id="infoIcon" class="icon" src="/images/info.svg"> info
         </span>
         <!--<span v-if="tokenData?.mint" class="tokenButton hide" id="mintButton">
@@ -114,16 +120,18 @@
           <span class="hidemobile">auth transfer</span>
           <span class="showmobile">auth</span>
         </span>-->
-        <div v-if="displayTokenInfo" id="tokenInfoDisplay" style="margin-top: 10px;">
+        <div v-if="displayNftInfo" id="tokenInfoDisplay" style="margin-top: 10px;">
           <div id="tokenBegin"></div>
-          <div v-if="tokenMetaData?.description" id="tokenDescription"> {{ tokenMetaData.description }} </div>
+          <div v-if="tokenMetaData?.description" id="tokenDescription"> {{ nftDescription }} </div>
           <div id="tokenCommitment"></div>
           <div id="tokenWebLink"></div>
           <div id="onchainTokenInfo" style="white-space: pre-line;"></div>
-          <!--<details v-if="tokenData?.nft" id="showAttributes" class="hide">
+          <details v-if="nftMetadata?.extensions?.attributes" style="cursor:pointer;">
             <summary>NFT attributes</summary>
-            <div id="nftAttributes" style="white-space: pre-wrap;"></div>
-          </details>-->
+            <div v-for="(attributeValue, attributeKey) in nftMetadata?.extensions?.attributes" :key="((attributeValue as string) + (attributeValue as string))" style="white-space: pre-wrap;">
+              {{ attributeKey }}: {{ attributeValue }}
+            </div>
+          </details>
         </div>
         <div v-if="displaySendNft" id="nftSend" style="margin-top: 10px;">
           Send this NFT to
