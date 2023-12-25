@@ -19,15 +19,18 @@
   const displaySendTokens = ref(false);
   const displaySendNft = ref(false);
   const displaySendAllNfts = ref(false);
+  const displayMintNfts = ref(false);
+  const displayBurnNft = ref(false);
   const displayTokenInfo = ref(false);
   const displayChildNfts = ref(false);
   const tokenSendAmount = ref("");
   const destinationAddr = ref("");
   const tokenMetaData = ref(null as (IdentitySnapshot | null));
 
+  const isSingleNft = computed(() => tokenData.value.nfts?.length == 1)
   const httpsUrlTokenIcon = computed(() => {
     let tokenIconUri = tokenMetaData.value?.uris?.icon;
-    if(tokenData.value.nfts?.length == 1){
+    if(isSingleNft.value){
       const commitment = tokenData.value.nfts?.[0].token?.commitment;
       const nftMetadata = tokenMetaData.value?.token?.nfts?.parse?.types[commitment ?? ""];
       const nftIconUri = nftMetadata?.uris?.icon;
@@ -40,7 +43,7 @@
   })
   const tokenName = computed(() => {
     let tokenName = tokenMetaData.value?.name;
-    if(tokenData.value.nfts?.length == 1){
+    if(isSingleNft.value){
       const commitment = tokenData.value.nfts?.[0].token?.commitment;
       const nftMetadata = tokenMetaData?.value?.token?.nfts?.parse?.types[commitment ?? ""];
       const nftName = nftMetadata?.name;
@@ -168,6 +171,26 @@
       console.log(error)
     }
   }
+  async function burnNft(wallet: TestNetWallet | null) {
+    const tokenId = tokenData.value.tokenId;
+    const nftInfo = tokenData.value.nfts?.[0].token;
+    let burnWarning = "You ae about to burn a minting NFT, this can not be unddone. \nAre you sure you want to burn the NFT?";
+    if (confirm(burnWarning) != true) return;
+    if(!wallet) return;
+    try {
+      const { txId } = await wallet.tokenBurn(
+        {
+          tokenId: tokenId,
+          capability: "minting",
+          commitment: nftInfo?.commitment,
+        },
+        "burn", // optional OP_RETURN message
+      );
+      const displayId = `${tokenId.slice(0, 20)}...${tokenId.slice(-10)}`;
+      alert(`Burned minting NFT of category ${displayId}`);
+      console.log(`Burned minting NFT of category ${displayId} \n${explorerUrl}/tx/${txId}`);
+    } catch (error) { alert(error) }
+  }
 
   watch(bcmrRegistries, () => {
     tokenMetaData.value = BCMR.getTokenInfo(tokenData.value.tokenId) ?? null;
@@ -220,24 +243,23 @@
       </div>
 
       <div class="actionBar">
-        <span v-if="!tokenData?.nfts" @click="displaySendTokens = !displaySendTokens" style="margin-left: 10px;" id="sendButton">
+        <span v-if="!tokenData?.nfts" @click="displaySendTokens = !displaySendTokens" style="margin-left: 10px;">
           <img id="sendIcon" class="icon" src="/images/send.svg"> send </span>
-        <span v-if="tokenData?.nfts?.length == 1" @click="displaySendNft = !displaySendNft" style="margin-left: 10px;" id="sendButton">
+        <span v-if="tokenData?.nfts?.length == 1" @click="displaySendNft = !displaySendNft" style="margin-left: 10px;">
           <img id="sendIcon" class="icon" src="/images/send.svg"> send </span>
         <span @click="displayTokenInfo = !displayTokenInfo" id="infoButton">
           <img id="infoIcon" class="icon" src="/images/info.svg"> info
         </span>
-        <span v-if="(tokenData.nfts?.length ?? 0) > 1" @click="displaySendAllNfts = !displaySendAllNfts" style="margin-left: 10px;" id="sendButton">
+        <span v-if="(tokenData.nfts?.length ?? 0) > 1" @click="displaySendAllNfts = !displaySendAllNfts" style="margin-left: 10px;">
           <img id="sendIcon" class="icon" src="/images/send.svg"> transfer all </span>
-        <!--<span v-if="tokenData?.mint" class="tokenButton hide" id="mintButton">
+        <span v-if="isSingleNft && tokenData?.nfts?.[0]?.token?.capability == 'minting'" @click="displayMintNfts = !displayMintNfts">
           <img id="mintIcon" class="icon" src="/images/hammer.svg"> mint NFTs
         </span>
-        <span v-if="tokenData?.nft" class="tokenButton hide" style="white-space: nowrap;" id="burnButton">
+        <span v-if="isSingleNft && tokenData?.nfts?.[0]?.token?.capability == 'minting'" @click="displayBurnNft = !displayBurnNft" style="white-space: nowrap;">
           <img id="burnIcon" class="icon" src="/images/fire.svg">
           <span class="hidemobile">burn NFT</span>
-          <span class="showmobile">burn</span>
         </span>
-        <span v-if="tokenData?.auth" style="white-space: nowrap;" id="authButton">
+        <!--<span v-if="tokenData?.auth" style="white-space: nowrap;" id="authButton">
           <img id="authIcon" class="icon" src="/images/shield.svg">
           <span class="hidemobile">auth transfer</span>
           <span class="showmobile">auth</span>
@@ -285,7 +307,7 @@
             <input @click="sendAllNfts(wallet)" type="button" class="primaryButton" id="sendNFT" value="Transfer NFTs">
           </p>
         </div>
-        <!--<div id="nftMint"  class="hide"  style="margin-top: 10px;">
+        <div id="nftMint" v-if="displayMintNfts" style="margin-top: 10px;">
           Mint a number of (unique) NFTs to a specific address
           <div>
             <input type="checkbox" checked id="uniqueNFTs" onchange="disableInputfield(event)" style="margin: 0px; vertical-align: text-bottom;">
@@ -301,12 +323,12 @@
             <input type="button" id="mintNFTs" value="Mint NFTs">
           </span>
         </div>
-        <div id="nftBurn"  class="hide"  style="margin-top: 10px;">
+        <div id="nftBurn" v-if="displayBurnNft" style="margin-top: 10px;">
           Burn this NFT so no new NFTs of this category can be minted
           <br>
-          <input type="button" id="burnNFT" value="burn NFT" class="button error">
+          <input @click="burnNft(wallet)" type="button" id="burnNFT" value="burn NFT" class="button error">
         </div>
-        <div id="authTransfer" class="hide" style="margin-top: 10px;">
+        <!--<div id="authTransfer" class="hide" style="margin-top: 10px;">
           Transfer the authority to change the token's metadata to another wallet <br>
           This should be to a wallet with coin-control, where you can label the Auth UTXO<br>
           It is recommended to use the Electron Cash pc wallet<br>

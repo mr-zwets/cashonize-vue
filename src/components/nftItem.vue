@@ -18,6 +18,8 @@
 
   const displaySendNft = ref(false);
   const displayNftInfo = ref(false);
+  const displayMintNfts = ref(false);
+  const displayBurnNft = ref(false);
   const destinationAddr = ref("");
 
   const nftMetadata = computed(() => {
@@ -71,6 +73,26 @@
       console.log(error)
     }
   }
+  async function burnNft(wallet: TestNetWallet | null) {
+    const nftInfo = nftData.value.token;
+      const tokenId = nftInfo?.tokenId as string;
+    let burnWarning = "You ae about to burn a minting NFT, this can not be unddone. \nAre you sure you want to burn the NFT?";
+    if (confirm(burnWarning) != true) return;
+    if(!wallet) return;
+    try {
+      const { txId } = await wallet.tokenBurn(
+        {
+          tokenId: tokenId,
+          capability: "minting",
+          commitment: nftInfo?.commitment,
+        },
+        "burn", // optional OP_RETURN message
+      );
+      const displayId = `${tokenId.slice(0, 20)}...${tokenId.slice(-10)}`;
+      alert(`Burned minting NFT of category ${displayId}`);
+      console.log(`Burned minting NFT of category ${displayId} \n${explorerUrl.value}/tx/${txId}`);
+    } catch (error) { alert(error) }
+  }
 </script>
 
 <template id="nft-template">
@@ -96,26 +118,25 @@
         <div class="tokenBaseInfo">
           <div class="tokenBaseInfo1">
             <div v-if="tokenName" id="tokenName">Name: {{ tokenName }}</div>
-            <div style="word-break: break-all;"> Commitment: {{ nftData?.token?.commitment }}</div>
+            <div style="word-break: break-all;"> Commitment: {{ nftData?.token?.commitment ? nftData?.token?.commitment : "none"  }}</div>
           </div>
         </div>
       </div>
 
       <div class="actionBar">
-        <span @click="displaySendNft = !displaySendNft" style="margin-left: 10px;" id="sendButton">
+        <span @click="displaySendNft = !displaySendNft" style="margin-left: 10px;">
           <img id="sendIcon" class="icon" src="/images/send.svg"> send </span>
-        <span @click="displayNftInfo = !displayNftInfo" id="infoButton">
+        <span v-if="nftMetadata" @click="displayNftInfo = !displayNftInfo" id="infoButton">
           <img id="infoIcon" class="icon" src="/images/info.svg"> info
         </span>
-        <!--<span v-if="tokenData?.mint" class="tokenButton hide" id="mintButton">
+        <span @click="displayMintNfts = !displayMintNfts" v-if="nftData?.token?.capability == 'minting'">
           <img id="mintIcon" class="icon" src="/images/hammer.svg"> mint NFTs
         </span>
-        <span v-if="tokenData?.nft" class="tokenButton hide" style="white-space: nowrap;" id="burnButton">
+        <span @click="displayBurnNft = !displayBurnNft" v-if="nftData?.token?.capability == 'minting'" style="white-space: nowrap;">
           <img id="burnIcon" class="icon" src="/images/fire.svg">
           <span class="hidemobile">burn NFT</span>
-          <span class="showmobile">burn</span>
         </span>
-        <span v-if="tokenData?.auth" style="white-space: nowrap;" id="authButton">
+        <!--<span v-if="tokenData?.auth" style="white-space: nowrap;" id="authButton">
           <img id="authIcon" class="icon" src="/images/shield.svg">
           <span class="hidemobile">auth transfer</span>
           <span class="showmobile">auth</span>
@@ -140,7 +161,7 @@
             <input @click="sendNft(wallet)" type="button" class="primaryButton" id="sendNFT" value="Send NFT">
           </p>
         </div>
-        <!--<div id="nftMint"  class="hide"  style="margin-top: 10px;">
+        <div id="nftMint" v-if="displayMintNfts" style="margin-top: 10px;">
           Mint a number of (unique) NFTs to a specific address
           <div>
             <input type="checkbox" checked id="uniqueNFTs" onchange="disableInputfield(event)" style="margin: 0px; vertical-align: text-bottom;">
@@ -156,12 +177,12 @@
             <input type="button" id="mintNFTs" value="Mint NFTs">
           </span>
         </div>
-        <div id="nftBurn"  class="hide"  style="margin-top: 10px;">
+        <div v-if="displayBurnNft" id="nftBurn" style="margin-top: 10px;">
           Burn this NFT so no new NFTs of this category can be minted
           <br>
-          <input type="button" id="burnNFT" value="burn NFT" class="button error">
+          <input @click="burnNft(wallet)" type="button" id="burnNFT" value="burn NFT" class="button error">
         </div>
-        <div id="authTransfer" class="hide" style="margin-top: 10px;">
+        <!---<div id="authTransfer" class="hide" style="margin-top: 10px;">
           Transfer the authority to change the token's metadata to another wallet <br>
           This should be to a wallet with coin-control, where you can label the Auth UTXO<br>
           It is recommended to use the Electron Cash pc wallet<br>
