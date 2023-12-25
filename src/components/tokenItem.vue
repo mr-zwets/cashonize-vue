@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import { ref, onMounted, watch, toRefs, computed } from 'vue';
+  import nftItem from './nftItem.vue'
   import { Wallet, TestNetWallet, TokenSendRequest, BCMR } from "mainnet-js"
   // @ts-ignore
   import { createIcon } from '@download/blockies';
@@ -17,7 +18,8 @@
 
   const displaySendTokens = ref(false);
   const displaySendNft = ref(false);
-  const displayTokenInfo = ref(false)
+  const displayTokenInfo = ref(false);
+  const displayChildNfts = ref(false);
   const tokenSendAmount = ref("");
   const destinationAddr = ref("");
   const tokenMetaData = ref(null as (IdentitySnapshot | null));
@@ -44,6 +46,13 @@
       if(nftName) tokenName = nftName;
     }
     return tokenName;
+  })
+  const tokenAmountDecimals = computed(() => {
+    if(!tokenData.value?.amount) return
+    let tokenAmountDecimals: bigint|number = tokenData.value?.amount;
+    const decimals = tokenMetaData.value?.token?.decimals;
+    if(decimals) tokenAmountDecimals = Number(tokenAmountDecimals) / (10 ** decimals);
+    return tokenAmountDecimals;
   })
 
   const explorerUrlMainnet = "https://explorer.bitcoinunlimited.info";
@@ -170,9 +179,9 @@
             <div id="childNftCommitment" style="word-break: break-all;" class="hide"></div>
           </div>
           <div v-if="tokenData?.amount" class="tokenAmount" id="tokenAmount">Token amount: 
-            {{ tokenMetaData?.token?.decimals ?  Number(tokenData.amount) / (10 ** tokenMetaData.token.decimals) : tokenData.amount }} {{ tokenMetaData?.token?.symbol }}
+            {{ tokenAmountDecimals }} {{ tokenMetaData?.token?.symbol }}
           </div>
-          <div v-if="(tokenData.nfts?.length ?? 0) > 1" class="childNfts" id="childNfts" style=" cursor: pointer; margin-left: 35px;">
+          <div v-if="(tokenData.nfts?.length ?? 0) > 1" @click="displayChildNfts = !displayChildNfts" class="showChildNfts">
             <span class="nrChildNfts" id="nrChildNfts">Number NFTs: {{ tokenData.nfts?.length }}</span>
             <span class="hide" id="showMore" style="margin-left: 10px;">
               <img id="showIcon" class="icon" style="vertical-align: text-bottom;" src="/images/chevron-square-down.svg">
@@ -273,5 +282,11 @@
         </div>-->
       </div>
     </fieldset>
+
+    <div v-if="displayChildNfts">
+      <div v-for="(nft, index) in tokenData.nfts" :key="'nft'+tokenData.tokenId.slice(0,4) + index">
+        <nftItem :wallet="wallet" :nftData="nft" :tokenMetaData="tokenMetaData" :chaingraph="chaingraph" :ipfsGateway="ipfsGateway" :explorerUrl="explorerUrl"/>
+      </div>
+    </div>
   </div>
 </template>
