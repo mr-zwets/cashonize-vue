@@ -71,14 +71,15 @@
       const validInput =  Number.isInteger(amountTokens);
       if(!validInput && !decimals) throw(`Amount tokens to send must be a valid integer`);
       if(!validInput ) throw(`Amount tokens to send must only have ${decimals} decimal places`);
+      const tokenId = tokenData.value.tokenId;
       const { txId } = await wallet.send([
         new TokenSendRequest({
           cashaddr: destinationAddr.value,
           amount: amountTokens,
-          tokenId: tokenData.value.tokenId,
+          tokenId: tokenId,
         }),
       ]);
-      const displayId = `${tokenData.value.tokenId.slice(0, 20)}...${tokenData.value.tokenId.slice(-10)}`;
+      const displayId = `${tokenId.slice(0, 20)}...${tokenId.slice(-10)}`;
       let message = `Sent ${tokenSendAmount.value} fungible tokens of category ${displayId} to ${destinationAddr.value} \n${explorerUrl}/tx/${txId}`;
       alert(message);
       console.log(message);
@@ -92,7 +93,24 @@
   async function sendNft(wallet: TestNetWallet | null){
     try{
       if(!wallet) return;
-      alert("tried to send NFT!");
+      const tokenId = tokenData.value.tokenId;
+      const nftInfo = tokenData.value.nfts?.[0].token;
+      const tokenCommitment = nftInfo?.commitment;
+      const tokenCapability = nftInfo?.capability;
+      const { txId } = await wallet.send([
+        new TokenSendRequest({
+          cashaddr: destinationAddr.value,
+          tokenId: tokenId,
+          commitment: tokenCommitment,
+          capability: tokenCapability,
+        }),
+      ]);
+      console.log(tokenCommitment, tokenCapability)
+      const displayId = `${tokenId.slice(0, 20)}...${tokenId.slice(-10)}`;
+      alert(`Sent NFT of category ${displayId} to ${destinationAddr.value}`);
+      console.log(`Sent NFT of category ${displayId} to ${destinationAddr.value} \n${explorerUrl}/tx/${txId}`);
+      destinationAddr.value = "";
+      displaySendNft.value = false;
     } catch(error){
       console.log(error)
     }
@@ -202,7 +220,7 @@
         <div v-if="displaySendNft" id="nftSend" style="margin-top: 10px;">
           Send this NFT to
           <p class="grouped">
-            <input id="tokenAddress" placeholder="tokenAddress">
+            <input v-model="destinationAddr" id="tokenAddress" placeholder="token address">
             <input @click="sendNft(wallet)" type="button" class="primaryButton" id="sendNFT" value="Send NFT">
           </p>
         </div>
