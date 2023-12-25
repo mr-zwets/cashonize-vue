@@ -23,10 +23,27 @@
   const tokenMetaData = ref(null as (IdentitySnapshot | null));
 
   const httpsUrlTokenIcon = computed(() => {
-    if(tokenMetaData?.value.uris?.icon.startsWith('ipfs://')){
-      return ipfsGateway.value + tokenMetaData?.value.uris?.icon.slice(7);
+    let tokenIconUri = tokenMetaData?.value.uris?.icon;
+    if(tokenData.value.nfts?.length == 1){
+      const commitment = tokenData.value.nfts?.[0].token?.commitment;
+      const nftMetadata = tokenMetaData?.value.token?.nfts?.parse?.types[commitment ?? ""];
+      const nftIconUri = nftMetadata?.uris?.icon;
+      if(nftIconUri) tokenIconUri = nftIconUri;
     }
-    else return tokenMetaData?.value.uris?.icon
+    if(tokenIconUri.startsWith('ipfs://')){
+      return ipfsGateway.value + tokenIconUri.slice(7);
+    }
+    return tokenIconUri;
+  })
+  const tokenName = computed(() => {
+    let tokenName = tokenMetaData.value?.name;
+    if(tokenData.value.nfts?.length == 1){
+      const commitment = tokenData.value.nfts?.[0].token?.commitment;
+      const nftMetadata = tokenMetaData?.value?.token?.nfts?.parse?.types[commitment ?? ""];
+      const nftName = nftMetadata?.name;
+      if(nftName) tokenName = nftName;
+    }
+    return tokenName;
   })
 
   const explorerUrlMainnet = "https://explorer.bitcoinunlimited.info";
@@ -143,7 +160,7 @@
         </div>
         <div class="tokenBaseInfo">
           <div class="tokenBaseInfo1">
-            <div v-if="tokenMetaData?.name" id="tokenName">Name: {{ tokenMetaData?.name }}</div>
+            <div v-if="tokenName" id="tokenName">Name: {{ tokenName }}</div>
             <div id="tokenIdBox" style="word-break: break-all;">
               TokenId: 
               <span class="tokenId">
