@@ -18,6 +18,7 @@
 
   const displaySendTokens = ref(false);
   const displaySendNft = ref(false);
+  const displaySendAllNfts = ref(false);
   const displayTokenInfo = ref(false);
   const displayChildNfts = ref(false);
   const tokenSendAmount = ref("");
@@ -140,6 +141,33 @@
       console.log(error)
     }
   }
+  async function sendAllNfts(wallet: TestNetWallet | null){
+    try{
+      if(!wallet) return;
+      const tokenId = tokenData.value.tokenId;
+      const allNfts = tokenData.value.nfts;
+      const outputArray:TokenSendRequest[] = [];
+      allNfts?.forEach(nftItem => {
+        const nftCommitment = nftItem?.token?.commitment;
+        const nftCapability = nftItem?.token?.capability;
+        outputArray.push(
+          new TokenSendRequest({
+          cashaddr: destinationAddr.value,
+          tokenId: tokenId,
+          commitment: nftCommitment,
+          capability: nftCapability,
+        }))
+      })
+      const { txId } = await wallet.send(outputArray);
+      const displayId = `${tokenId.slice(0, 20)}...${tokenId.slice(-10)}`;
+      alert(`Sent all NFTs of category ${displayId} to ${destinationAddr.value}`);
+      console.log(`Sent all NFTs of category ${displayId} to ${destinationAddr.value} \n${explorerUrl}/tx/${txId}`);
+      destinationAddr.value = "";
+      displaySendAllNfts.value = false;
+    } catch(error){
+      console.log(error)
+    }
+  }
 
   watch(bcmrRegistries, () => {
     tokenMetaData.value = BCMR.getTokenInfo(tokenData.value.tokenId) ?? null;
@@ -199,7 +227,7 @@
         <span @click="displayTokenInfo = !displayTokenInfo" id="infoButton">
           <img id="infoIcon" class="icon" src="/images/info.svg"> info
         </span>
-        <span v-if="(tokenData.nfts?.length ?? 0) > 1" style="margin-left: 10px;" id="sendButton">
+        <span v-if="(tokenData.nfts?.length ?? 0) > 1" @click="displaySendAllNfts = !displaySendAllNfts" style="margin-left: 10px;" id="sendButton">
           <img id="sendIcon" class="icon" src="/images/send.svg"> transfer all </span>
         <!--<span v-if="tokenData?.mint" class="tokenButton hide" id="mintButton">
           <img id="mintIcon" class="icon" src="/images/hammer.svg"> mint NFTs
@@ -243,11 +271,18 @@
           </div>
           <input @click="sendTokens(wallet)" type="button" id="sendSomeButton" class="primaryButton" value="Send">
         </div>
-        <div v-if="displaySendNft" id="nftSend" style="margin-top: 10px;">
+        <div v-if="displaySendNft" style="margin-top: 10px;">
           Send this NFT to
           <p class="grouped">
             <input v-model="destinationAddr" id="tokenAddress" placeholder="token address">
             <input @click="sendNft(wallet)" type="button" class="primaryButton" id="sendNFT" value="Send NFT">
+          </p>
+        </div>
+        <div v-if="displaySendAllNfts" style="margin-top: 10px;">
+          Send all {{ tokenData.nfts?.length }} NFTs of this category to
+          <p class="grouped">
+            <input v-model="destinationAddr" id="tokenAddress" placeholder="token address">
+            <input @click="sendAllNfts(wallet)" type="button" class="primaryButton" id="sendNFT" value="Transfer NFTs">
           </p>
         </div>
         <!--<div id="nftMint"  class="hide"  style="margin-top: 10px;">
