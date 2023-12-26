@@ -4,6 +4,7 @@
   import myTokensView from "./components/myTokens.vue"
   import settingsMenu from './components/settingsMenu.vue'
   import connectView from './components/walletConnect.vue'
+  import createTokensView from './components/createTokens.vue'
   import { ref } from 'vue'
   import { Wallet, TestNetWallet, BalanceResponse, BCMR, binToHex } from "mainnet-js"
   import type { TokenData } from "./interfaces/interfaces"
@@ -26,6 +27,7 @@
   const bcmrIndexer = ref(defaultBcmrIndexer);
   const bcmrRegistries = ref(undefined as (any[] | undefined));
   const bchUnit = ref("bch" as ("bch" | "sat"));
+  const plannedTokenId = ref(undefined as (undefined | string));
 
   function changeView(newView: number){
     displayView.value = newView;
@@ -52,6 +54,10 @@
     // timeout needed for correct rerender
     await new Promise(resolve => setTimeout(resolve, 10));
     bcmrRegistries.value = BCMR.getRegistries();
+    // get plannedTokenId
+    const walletUtxos = await wallet.value?.getAddressUtxos();
+    const preGenesisUtxo = walletUtxos?.find(utxo => !utxo.token && utxo.vout === 0);
+    plannedTokenId.value = preGenesisUtxo?.txid;
   }
 
   async function updateTokenList(resultGetFungibleTokens: any, resultGetNFTs: any){
@@ -187,9 +193,10 @@
     <nav v-if="displayView" style="display: flex; justify-content: center;">
       <div @click="changeView(1)" v-bind:style="displayView == 1 ? {color: 'var(--color-primary'} : ''">BchWallet</div>
       <div @click="changeView(2)" v-bind:style="displayView == 2 ? {color: 'var(--color-primary'} : ''">MyTokens</div>
-      <div @click="changeView(3)" v-bind:style="displayView == 3 ? {color: 'var(--color-primary'} : ''">WalletConnect</div>
-      <div @click="changeView(4)">
-        <img style="vertical-align: text-bottom;" v-bind:src="displayView == 4 ? 'images/settingsGreen.svg' : 'images/settings.svg'">
+      <div @click="changeView(3)" v-bind:style="displayView == 3 ? {color: 'var(--color-primary'} : ''">CreateTokens</div>
+      <div @click="changeView(4)" v-bind:style="displayView == 4 ? {color: 'var(--color-primary'} : ''">WalletConnect</div>
+      <div @click="changeView(5)">
+        <img style="vertical-align: text-bottom;" v-bind:src="displayView == 5 ? 'images/settingsGreen.svg' : 'images/settings.svg'">
       </div>
     </nav>
   </header>
@@ -199,8 +206,9 @@
     </Suspense>
     <bchWalletView v-if="displayView == 1" :wallet="(wallet as TestNetWallet | null )" :balance="balance" :nrTokenCategories="nrTokenCategories" :maxAmountToSend="maxAmountToSend" :bchUnit="bchUnit"/>
     <myTokensView v-if="displayView == 2" :wallet="(wallet as TestNetWallet | null )" :tokenList="tokenList" :bcmrRegistries="bcmrRegistries" :chaingraph="chaingraph" :ipfsGateway="ipfsGateway"/>
-    <connectView v-if="displayView == 3"/>
-    <settingsMenu v-if="displayView == 4" @change-network="(arg) => changeNetwork(arg)" @change-unit="(arg) => changeUnit(arg)" :wallet="(wallet as TestNetWallet | null )" :network="network" :bchUnit="bchUnit"/>
+    <createTokensView v-if="displayView == 3" :wallet="(wallet as TestNetWallet | null )" :balance="balance" :plannedTokenId="plannedTokenId"/>
+    <connectView v-if="displayView == 4"/>
+    <settingsMenu v-if="displayView == 5" @change-network="(arg) => changeNetwork(arg)" @change-unit="(arg) => changeUnit(arg)" :wallet="(wallet as TestNetWallet | null )" :network="network" :bchUnit="bchUnit"/>
   </main>
 </template>
 

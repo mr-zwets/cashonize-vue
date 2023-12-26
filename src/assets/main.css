@@ -19,7 +19,9 @@ header{
   flex-direction: column;
   text-align: center;
 }
-
+b {
+  font-weight: 700;
+}
 a,
 .green {
   text-decoration: none;
