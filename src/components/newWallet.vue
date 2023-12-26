@@ -14,6 +14,7 @@
   const mainnetWalletExists = await Wallet.namedExists(nameWallet);
   const testnetWalletExists = await TestNetWallet.namedExists(nameWallet);
   walletExists.value = mainnetWalletExists || testnetWalletExists;
+  Config.EnforceCashTokenReceiptAddresses = true;
 
   if(walletExists.value){
     const mainnetWallet = await Wallet.named(nameWallet);

@@ -12,6 +12,10 @@
   }>()
   const { wallet, balance, maxAmountToSend, nrTokenCategories, bchUnit } = toRefs(props);
 
+  const bchDisplayUnit = computed(() => {
+    if(wallet.value?.network == "mainnet") return bchUnit.value == "bch"? " BCH" : " sats"
+    else return bchUnit.value == "bch"? " tBCH" : " tsats"
+  })
   const displayUnitLong = computed(() => {
     if(wallet.value?.network == "mainnet") return bchUnit.value == "bch"? " BCH" : " satoshis"
     else return bchUnit.value == "bch"? " tBCH" : " testnet satoshis"
@@ -122,11 +126,11 @@
       <span class="sendAmountGroup">
         <span style="position: relative; width: 50%;">
           <input v-model="bchSendAmount" @input="setUsdAmount" id="sendAmount" type="number" placeholder="amount">
-          <i class="input-icon" style="color: black;">{{ bchUnit.toLocaleUpperCase() }}</i>
+          <i class="input-icon" style="color: black;">{{ bchDisplayUnit }}</i>
         </span>
         <span style="position: relative; width: 50%; margin-left: 5px;">
           <input v-model="usdSendAmount" @input="setBchAmount" id="sendAmount" type="number" placeholder="amount">
-          <i class="input-icon" style="color: black;">USD $</i>
+          <i class="input-icon" style="color: black;">{{wallet?.network == "mainnet"? "USD $":"tUsd $"}}</i>
         </span> 
             <button @click="useMaxBchAmount()" style="margin-left: 5px;">max</button>
       </span>
