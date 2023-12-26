@@ -112,16 +112,14 @@
       <span class="depositAddr">{{ wallet?.tokenaddr ?? "" }}</span>
       <img class="copyIcon" src="/images/copyGrey.svg" @click="() => copyToClipboard(wallet?.tokenaddr)">
     </div>
-    <qr-code id="qrCode" :contents="displayeBchQr? wallet?.address : wallet?.tokenaddr" style="display: block; width: 240px; height: 240px; margin: 5px auto 0 auto;">
+    <qr-code id="qrCode" :contents="displayeBchQr? wallet?.address : wallet?.tokenaddr" style="display: block; width: 230px; height: 230px; margin: 5px auto 0 auto;">
       <img :src="displayeBchQr? 'images/bch-icon.png':'images/tokenicon.png'" slot="icon" /> <!-- eslint-disable-line -->
     </qr-code>
     <div style="text-align: center;">
-      <div id="switchAddress" class="icon" @click="switchAddressTypeQr()" style="font-size: 20px;font-weight: 700;width: fit-content; margin: auto; margin-top: -10px; cursor: pointer;">⇄</div>
+      <div id="switchAddress" class="icon" @click="switchAddressTypeQr()" style="font-size: 20px;font-weight: 700;width: fit-content; margin: auto; margin-top: -15px; cursor: pointer;">⇄</div>
     </div>
-  </fieldset>
-  <fieldset style="margin-top: 15px;">
-    <legend>Send BCH to</legend>
-    <div>
+    <div style="margin-top: 10px;">
+      Send BCH:
       <input v-model="destinationAddr" id="destinationAddr" placeholder="address">
       <span class="sendAmountGroup">
         <span style="position: relative; width: 50%;">
