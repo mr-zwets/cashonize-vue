@@ -48,16 +48,17 @@
     balance.value = resultWalletBalance;
     nrTokenCategories.value = tokenCategories.length;
     maxAmountToSend.value = resultMaxAmountToSend;
+    const utxosPromise = wallet.value?.getAddressUtxos();
     await updateTokenList(resultGetFungibleTokens, resultGetNFTs);
     setUpWalletSubscriptions();
+    // get plannedTokenId
+    const walletUtxos = await utxosPromise;
+    const preGenesisUtxo = walletUtxos?.find(utxo => !utxo.token && utxo.vout === 0);
+    plannedTokenId.value = preGenesisUtxo?.txid ?? "";
     await importRegistries(tokenCategories);
     // timeout needed for correct rerender
     await new Promise(resolve => setTimeout(resolve, 10));
     bcmrRegistries.value = BCMR.getRegistries();
-    // get plannedTokenId
-    const walletUtxos = await wallet.value?.getAddressUtxos();
-    const preGenesisUtxo = walletUtxos?.find(utxo => !utxo.token && utxo.vout === 0);
-    plannedTokenId.value = preGenesisUtxo?.txid;
   }
 
   async function updateTokenList(resultGetFungibleTokens: any, resultGetNFTs: any){
@@ -126,6 +127,7 @@
     balance.value = undefined;
     nrTokenCategories.value = undefined;
     maxAmountToSend.value = undefined;
+    plannedTokenId.value = undefined;
     tokenList.value = null;
     changeView(1);
   }
