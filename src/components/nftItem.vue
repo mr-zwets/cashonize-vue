@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ref, onMounted, watch, toRefs, computed } from 'vue';
-  import { Wallet, TestNetWallet, TokenSendRequest, BCMR } from "mainnet-js"
+  import { Wallet, TestNetWallet, TokenSendRequest, TokenMintRequest, BCMR } from "mainnet-js"
   import { type UtxoI } from "mainnet-js"
   // @ts-ignore
   import { createIcon } from '@download/blockies';
@@ -22,6 +22,10 @@
   const displayMintNfts = ref(false);
   const displayBurnNft = ref(false);
   const destinationAddr = ref("");
+  const mintUniqueNfts = ref("yes" as 'yes' | 'no');
+  const mintCommitment = ref("");
+  const mintAmountNfts = ref(undefined as string | undefined);
+  const startingNumberNFTs = ref(undefined as string | undefined);
 
   const nftMetadata = computed(() => {
     const commitment = nftData.value?.token?.commitment;
@@ -61,7 +65,6 @@
     const template = document.querySelector(`#${id.value}`);
     const iconDiv = template?.querySelector("#genericTokenIcon")
     iconDiv?.appendChild(icon);
-    tokenMetaData.value = BCMR.getTokenInfo(tokenId) ?? null;
   })
 
   async function sendNft(wallet: TestNetWallet | null){
@@ -88,6 +91,50 @@
     } catch(error){
       console.log(error)
     }
+  }
+  async function mintNfts(wallet: TestNetWallet | null) {
+    try {
+      if(!wallet || !nftData.value?.token) return;
+      const tokenAddr = wallet.tokenaddr;
+      const unique = mintUniqueNfts.value === 'yes';
+      let tokenCommitment = unique? "" : mintCommitment.value;
+      const nftInfo = nftData.value.token;
+      const tokenId = nftInfo?.tokenId as string;
+      if(mintAmountNfts.value == undefined || startingNumberNFTs.value == undefined){
+        alert('invalid inputs');
+        return;
+      }
+      const mintAmount = parseInt(mintAmountNfts.value);
+      const startingNumber = parseInt(startingNumberNFTs.value);
+      const isHex = (str:string) => /^[A-F0-9]+$/i.test(str);
+      const validCommitment = (isHex(tokenCommitment) || tokenCommitment == "")
+      if(!validCommitment) throw(`tokenCommitment '${tokenCommitment}' must be a hexadecimal`);
+      const recipientAddr = destinationAddr.value? destinationAddr.value : tokenAddr;
+      const arraySendrequests = [];
+      for (let i = 0; i < mintAmount; i++){
+        if(unique){
+          tokenCommitment = (startingNumber + i).toString(16);
+          if(tokenCommitment.length % 2 != 0) tokenCommitment = `0${tokenCommitment}`;
+        }
+        const mintRequest = new TokenMintRequest({
+          cashaddr: recipientAddr,
+          commitment: tokenCommitment,
+          capability: "none",
+          value: 1000,
+        })
+        arraySendrequests.push(mintRequest);
+      }
+      const { txId } = await wallet.tokenMint(tokenId, arraySendrequests);
+      const displayId = `${tokenId.slice(0, 20)}...${tokenId.slice(-10)}`;
+      const commitmentText= tokenCommitment? `with commitment ${tokenCommitment}`: "";
+      if(mintAmount == 1){
+        alert(`Minted immutable NFT of category ${displayId} ${commitmentText}`);
+        console.log(`Minted immutable NFT of category ${displayId} ${commitmentText} \n${explorerUrl.value}/tx/${txId}`);
+      } else {
+        alert(`Minted ${mintAmount} NFTs of category ${displayId}`);
+        console.log(`Minted ${mintAmount} immutable NFT of category ${displayId} \n${explorerUrl.value}/tx/${txId}`);
+      }
+    } catch (error) { alert(error) }
   }
   async function burnNft(wallet: TestNetWallet | null) {
     const nftInfo = nftData.value.token;
@@ -180,17 +227,17 @@
         <div id="nftMint" v-if="displayMintNfts" style="margin-top: 10px;">
           Mint a number of (unique) NFTs to a specific address
           <div>
-            <input type="checkbox" checked id="uniqueNFTs" onchange="disableInputfield(event)" style="margin: 0px; vertical-align: text-bottom;">
+            <input type="checkbox" v-model="mintUniqueNfts" true-value="yes" false-value="no" style="margin: 0px; vertical-align: text-bottom;">
             make each NFT unique by numbering each one in the collection
           </div>
           <p class="grouped" style="align-items: center; margin-bottom: 5px;">
-            <input id="amountNFTs" type="number" placeholder="amount NFTs">
-            <input id="startingNumberNFTs" type="number" placeholder="starting number" style="margin-right: 0px;">
-            <input id="commitmentNFTs" placeholder="commitment" style="display: none;">
+            <input v-model="mintAmountNfts" type="number" placeholder="amount NFTs">
+            <input v-if="mintUniqueNfts == 'yes'" v-model="startingNumberNFTs" type="number" placeholder="starting number" style="margin-right: 0px;">
+            <input v-if="mintUniqueNfts == 'no'" v-model="mintCommitment" placeholder="commitment">
           </p>
           <span class="grouped">
-            <input id="destinationAddr" placeholder="destinationAddress"> 
-            <input type="button" id="mintNFTs" value="Mint NFTs">
+            <input v-model="destinationAddr" placeholder="destinationAddress"> 
+            <input @click="mintNfts(wallet)" type="button" id="mintNFTs" value="Mint NFTs">
           </span>
         </div>
         <div v-if="displayBurnNft" id="nftBurn" style="margin-top: 10px;">
