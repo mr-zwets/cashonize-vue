@@ -172,8 +172,8 @@
         </div>
       </div>-->
       <div class="tokenInfo">
-        <div v-if="!tokenMetaData?.uris?.icon" id="genericTokenIcon" class="tokenIcon"></div>
-        <img v-if="tokenMetaData?.uris?.icon" id="tokenIcon" class="tokenIcon" style="width: 48px; border-radius: 50%;" :src="httpsUrlTokenIcon">
+        <img v-if="httpsUrlTokenIcon" id="tokenIcon" class="tokenIcon" style="width: 48px; border-radius: 50%;" :src="httpsUrlTokenIcon">
+        <div v-else id="genericTokenIcon" class="tokenIcon"></div>
         <!--<div v-if="tokenData?.nft" id="tokenIconModal" class="modal">
           <span class="close">&times;</span>
           <img class="modal-content" id="imgTokenIcon" style="width: 400px; max-width: 80%;">

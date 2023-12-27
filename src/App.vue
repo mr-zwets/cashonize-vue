@@ -159,8 +159,7 @@
   // Import onchain resolved BCMRs
   async function importRegistries(tokenIds: string[]) {
     let metadataPromises = [];
-    for (let index = 0; index < tokenIds.length; index++) {
-      const tokenId = tokenIds[index];
+    for (const tokenId of tokenIds) {
       try {
         const metadataPromise = fetch(`${bcmrIndexer.value}/registries/${tokenId}/latest`);
         metadataPromises.push(metadataPromise);
@@ -170,12 +169,14 @@
     const resolveMetadataPromsises = Promise.all(metadataPromises);
     const resultsMetadata = await resolveMetadataPromsises;
     console.timeEnd('Promises BCMR indexer');
+    console.time('response.json()');
     for await (const response of resultsMetadata){
       if (response?.status != 404) {
         const jsonResponse = await response.json();
         BCMR.addMetadataRegistry(jsonResponse);
       }
     }
+    console.timeEnd('response.json()');
   }
 </script>
 
