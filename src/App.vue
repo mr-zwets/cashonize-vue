@@ -5,8 +5,9 @@
   import settingsMenu from './components/settingsMenu.vue'
   import connectView from './components/walletConnect.vue'
   import createTokensView from './components/createTokens.vue'
-  import { ref } from 'vue'
-  import { Wallet, TestNetWallet, BalanceResponse, BCMR, binToHex } from "mainnet-js"
+  import { ref, computed } from 'vue'
+  import { Wallet, TestNetWallet, BalanceResponse, BCMR, binToHex, BaseWallet, Config } from "mainnet-js"
+  import { IndexedDBProvider } from "@mainnet-cash/indexeddb-storage"
   import type { TokenData } from "./interfaces/interfaces"
 
   const nameWallet = "mywallet";
@@ -16,7 +17,6 @@
 
   // reactive state
   const wallet = ref(null as (Wallet |TestNetWallet | null));
-  const network = ref("mainnet" as ("mainnet" | "chipnet"));
   const balance = ref(undefined as (BalanceResponse | undefined));
   const maxAmountToSend = ref(undefined as (BalanceResponse | undefined));
   const nrTokenCategories = ref(undefined as (number | undefined));
@@ -28,6 +28,28 @@
   const bcmrRegistries = ref(undefined as (any[] | undefined));
   const bchUnit = ref("bch" as ("bch" | "sat"));
   const plannedTokenId = ref(undefined as (undefined | string));
+
+  const network = computed(() => wallet.value?.network == "mainnet" ? "mainnet" : "chipnet")
+
+  // set mainnet-js config
+  Config.EnforceCashTokenReceiptAddresses = true;
+  // @ts-ignore
+  BaseWallet.StorageProvider = IndexedDBProvider;
+  
+  // check if wallet exists
+  const mainnetWalletExists = await Wallet.namedExists(nameWallet);
+  const testnetWalletExists = await TestNetWallet.namedExists(nameWallet);
+  const walletExists = mainnetWalletExists || testnetWalletExists;
+  if(walletExists){
+    // read local storage
+    const readNetwork = localStorage.getItem("network");
+    const readUnit = localStorage.getItem("unit");
+    // initialise wallet on configured network
+    const walletClass = (readNetwork != "chipnet")? Wallet : TestNetWallet;
+    const initWallet = await walletClass.named(nameWallet);
+    if(readUnit && (readUnit=="bch" || readUnit=="sat")) bchUnit.value = readUnit;
+    setWallet(initWallet);
+  }
 
   function changeView(newView: number){
     displayView.value = newView;
@@ -113,8 +135,8 @@
   }
 
   function changeUnit(newUnit: "bch" | "sat"){
-    console.log(newUnit)
     bchUnit.value = newUnit;
+    localStorage.setItem("unit", newUnit);
     changeView(1);
   }
 
@@ -122,7 +144,7 @@
     const walletClass = (newNetwork == "mainnet")? Wallet : TestNetWallet;
     const newWallet = await walletClass.named(nameWallet);
     setWallet(newWallet);
-    network.value = newNetwork;
+    localStorage.setItem("network", newNetwork);
     // reset wallet to default state
     balance.value = undefined;
     nrTokenCategories.value = undefined;
@@ -203,9 +225,7 @@
     </nav>
   </header>
   <main style="margin: 20px auto; max-width: 75rem;">
-    <Suspense>
-      <newWalletView @init-wallet="(arg) => setWallet(arg)"/>
-    </Suspense>
+    <newWalletView v-if="!wallet" @init-wallet="(arg) => setWallet(arg)"/>
     <bchWalletView v-if="displayView == 1" :wallet="(wallet as TestNetWallet | null )" :balance="balance" :nrTokenCategories="nrTokenCategories" :maxAmountToSend="maxAmountToSend" :bchUnit="bchUnit"/>
     <myTokensView v-if="displayView == 2" :wallet="(wallet as TestNetWallet | null )" :tokenList="tokenList" :bcmrRegistries="bcmrRegistries" :chaingraph="chaingraph" :ipfsGateway="ipfsGateway"/>
     <createTokensView v-if="displayView == 3" :wallet="(wallet as TestNetWallet | null )" :balance="balance" :plannedTokenId="plannedTokenId"/>

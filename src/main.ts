@@ -1,6 +1,6 @@
 import './assets/main.css'
 
 import { createApp } from 'vue'
-import App from './App.vue'
+import AsyncApp from './AsyncApp.vue'
 
-createApp(App).mount('#app')
+createApp(AsyncApp).mount('#app')

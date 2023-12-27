@@ -1,32 +1,18 @@
 <script setup lang="ts">
   import { ref } from "vue"
-  import { Wallet, TestNetWallet, BaseWallet, Config } from "mainnet-js"
-  import { IndexedDBProvider } from "@mainnet-cash/indexeddb-storage"
+  import { Wallet, TestNetWallet, Config } from "mainnet-js"
 
-  const walletExists = ref(false);
   const seedphrase = ref(undefined as (string | undefined));
   const selectedDerivationPath =  ref("standard" as ("standard" | "bitcoindotcom"));
   const emit = defineEmits(['initWallet']);
 
-  // @ts-ignore
-  BaseWallet.StorageProvider = IndexedDBProvider;
   const nameWallet = "mywallet";
-  const mainnetWalletExists = await Wallet.namedExists(nameWallet);
-  const testnetWalletExists = await TestNetWallet.namedExists(nameWallet);
-  walletExists.value = mainnetWalletExists || testnetWalletExists;
-  Config.EnforceCashTokenReceiptAddresses = true;
-
-  if(walletExists.value){
-    const mainnetWallet = await Wallet.named(nameWallet);
-    emit('initWallet', mainnetWallet);
-  }
 
   async function createNewWallet() {
     const mainnetWallet = await Wallet.named(nameWallet);
     const walletId = mainnetWallet.toDbString().replace("mainnet", "testnet");
     await TestNetWallet.replaceNamed(nameWallet, walletId);
     emit('initWallet', mainnetWallet);
-    walletExists.value = true;
   }
 
   async function importWallet() {
@@ -38,12 +24,11 @@
     await TestNetWallet.replaceNamed(nameWallet, walletIdTestnet);
     const mainnetWallet = await Wallet.named(nameWallet);
     emit('initWallet', mainnetWallet);
-    walletExists.value = true;
   }
 </script>
 
 <template>
-  <fieldset v-if="!walletExists" style="margin-top: 15px;">
+  <fieldset style="margin-top: 15px;">
     <h4><img class="icon plusIcon" src="/images/plus-square.svg"> Create new wallet</h4>
     <input @click="createNewWallet()" class="button primary" type="button" value="Create">
     <br><br>

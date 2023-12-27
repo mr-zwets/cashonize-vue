@@ -17,14 +17,10 @@
   const emit = defineEmits(['changeUnit','changeNetwork']);
 
   function changeUnit(){
-    const newUnit = selectedUnit.value;
-    console.log(newUnit)
-    emit('changeUnit', newUnit);
+    emit('changeUnit', selectedUnit.value);
   }
   function changeNetwork(){
-    const newNetwork = selectedNetwork.value;
-    console.log(newNetwork)
-    emit('changeNetwork', newNetwork);
+    emit('changeNetwork', selectedNetwork.value);
   }
   function toggleShowSeedphrase(){
     displayeSeedphrase.value = !displayeSeedphrase.value;
