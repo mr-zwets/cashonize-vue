@@ -14,6 +14,7 @@
   const defaultChaingraph = "https://gql.chaingraph.pat.mn/v1/graphql";
   const dafaultIpfsGateway = "https://ipfs.io/ipfs/";
   const defaultBcmrIndexer = "https://bcmr.paytaca.com/api";
+  const defaultBcmrIndexerChipnet = "https://bcmr-chipnet.paytaca.com/api";
 
   // reactive state
   const wallet = ref(null as (Wallet |TestNetWallet | null));
@@ -24,12 +25,12 @@
   const displayView = ref(undefined as (number | undefined));
   const chaingraph = ref(defaultChaingraph);
   const ipfsGateway = ref(dafaultIpfsGateway);
-  const bcmrIndexer = ref(defaultBcmrIndexer);
   const bcmrRegistries = ref(undefined as (any[] | undefined));
   const bchUnit = ref("bch" as ("bch" | "sat"));
   const plannedTokenId = ref(undefined as (undefined | string));
 
   const network = computed(() => wallet.value?.network == "mainnet" ? "mainnet" : "chipnet")
+  const bcmrIndexer = computed(() => network.value == "mainnet" ? defaultBcmrIndexer : defaultBcmrIndexerChipnet)
 
   // set mainnet-js config
   Config.EnforceCashTokenReceiptAddresses = true;
@@ -77,9 +78,10 @@
     const walletUtxos = await utxosPromise;
     const preGenesisUtxo = walletUtxos?.find(utxo => !utxo.token && utxo.vout === 0);
     plannedTokenId.value = preGenesisUtxo?.txid ?? "";
+    console.time('importRegistries');
     await importRegistries(tokenCategories);
+    console.timeEnd('importRegistries');
     // timeout needed for correct rerender
-    await new Promise(resolve => setTimeout(resolve, 10));
     bcmrRegistries.value = BCMR.getRegistries();
   }
 
@@ -156,56 +158,22 @@
 
   // Import onchain resolved BCMRs
   async function importRegistries(tokenIds: string[]) {
-    // use the bcmrIndexer for mainnet
-    if(network.value == "mainnet"){
-      let metadataPromises = [];
-      for(let index=0; index < tokenIds.length; index++){
-        const tokenId = tokenIds[index];
-        try{
-          const metadataPromise = fetch(`${bcmrIndexer.value}/registries/${tokenId}/latest`);
-          metadataPromises.push(metadataPromise);
-        } catch(error){ /*console.log(error)*/ }
-      }
-      console.time('Promises BCMR indexer');
-      const resolveMetadataPromsises = Promise.all(metadataPromises);
-      const resultsMetadata = await resolveMetadataPromsises;
-      console.timeEnd('Promises BCMR indexer');
-      resultsMetadata.forEach(async(response) => {
-        if(response.status != 404){
-          const jsonResponse = await response.json();
-          BCMR.addMetadataRegistry(jsonResponse);
-        }
-      })
-    } else {
-      let authChainPromises = [];
-      for(let index=0; index < tokenIds.length; index++){
-        const tokenId = tokenIds[index];
-        try{
-          const authChainPromise = BCMR.fetchAuthChainFromChaingraph({
-            chaingraphUrl: chaingraph.value,
-            transactionHash: tokenId,
-            network: network.value
-          });
-          authChainPromises.push(authChainPromise)
-        } catch(error){ console.log(error) }
-      }
-      console.time('Promises ChainGraph');
-      const resolveChaingraphPromises = Promise.allSettled(authChainPromises)
-      const resultsAuthChains = await resolveChaingraphPromises;
-      console.timeEnd('Promises ChainGraph');
-      for(let index=0; index < resultsAuthChains.length; index++){
-        const authChainResp = resultsAuthChains[index];
-        if(authChainResp.status == "fulfilled"){
-          try{
-            const authChain = authChainResp.value;
-            const bcmrLocation = authChain.at(-1)?.uris[0];
-            let httpsUrl = authChain.at(-1)?.httpsUrl;
-            // If IPFS, use own configured IPFS gateway
-            if(bcmrLocation?.startsWith("ipfs://")) httpsUrl = bcmrLocation.replace("ipfs://", ipfsGateway.value);
-            if(httpsUrl) await BCMR.addMetadataRegistryFromUri(httpsUrl);
-            console.log("Importing an on-chain resolved BCMR from " + httpsUrl);
-          }catch(e){ console.log(e) }
-        }
+    let metadataPromises = [];
+    for (let index = 0; index < tokenIds.length; index++) {
+      const tokenId = tokenIds[index];
+      try {
+        const metadataPromise = fetch(`${bcmrIndexer.value}/registries/${tokenId}/latest`);
+        metadataPromises.push(metadataPromise);
+      } catch (error) { /*console.log(error)*/ }
+    }
+    console.time('Promises BCMR indexer');
+    const resolveMetadataPromsises = Promise.all(metadataPromises);
+    const resultsMetadata = await resolveMetadataPromsises;
+    console.timeEnd('Promises BCMR indexer');
+    for await (const response of resultsMetadata){
+      if (response?.status != 404) {
+        const jsonResponse = await response.json();
+        BCMR.addMetadataRegistry(jsonResponse);
       }
     }
   }
