@@ -6,36 +6,25 @@
   import connectView from './components/walletConnect.vue'
   import createTokensView from './components/createTokens.vue'
   import { ref, computed } from 'vue'
-  import { Wallet, TestNetWallet, BalanceResponse, BCMR, binToHex, BaseWallet, Config } from "mainnet-js"
-  import { IndexedDBProvider } from "@mainnet-cash/indexeddb-storage"
+  import { Wallet, TestNetWallet, BalanceResponse, BCMR, binToHex } from "mainnet-js"
   import type { TokenData } from "./interfaces/interfaces"
+  import { useStore } from './store'
+  const store = useStore()
 
   const nameWallet = "mywallet";
-  const defaultChaingraph = "https://gql.chaingraph.pat.mn/v1/graphql";
-  const dafaultIpfsGateway = "https://ipfs.io/ipfs/";
   const defaultBcmrIndexer = "https://bcmr.paytaca.com/api";
   const defaultBcmrIndexerChipnet = "https://bcmr-chipnet.paytaca.com/api";
 
   // reactive state
-  const wallet = ref(null as (Wallet |TestNetWallet | null));
   const balance = ref(undefined as (BalanceResponse | undefined));
   const maxAmountToSend = ref(undefined as (BalanceResponse | undefined));
-  const nrTokenCategories = ref(undefined as (number | undefined));
   const tokenList = ref(null as (Array<TokenData> | null));
   const displayView = ref(undefined as (number | undefined));
-  const chaingraph = ref(defaultChaingraph);
-  const ipfsGateway = ref(dafaultIpfsGateway);
-  const bcmrRegistries = ref(undefined as (any[] | undefined));
-  const bchUnit = ref("bch" as ("bch" | "sat"));
+  const nrBcmrRegistries = ref(undefined as (number | undefined));
   const plannedTokenId = ref(undefined as (undefined | string));
 
-  const network = computed(() => wallet.value?.network == "mainnet" ? "mainnet" : "chipnet")
-  const bcmrIndexer = computed(() => network.value == "mainnet" ? defaultBcmrIndexer : defaultBcmrIndexerChipnet)
-
-  // set mainnet-js config
-  Config.EnforceCashTokenReceiptAddresses = true;
-  // @ts-ignore
-  BaseWallet.StorageProvider = IndexedDBProvider;
+  const bcmrIndexer = computed(() => store.network == "mainnet" ? defaultBcmrIndexer : defaultBcmrIndexerChipnet)
+  const nrTokenCategories = computed(() => tokenList.value?.length)
   
   // check if wallet exists
   const mainnetWalletExists = await Wallet.namedExists(nameWallet);
@@ -48,7 +37,7 @@
     // initialise wallet on configured network
     const walletClass = (readNetwork != "chipnet")? Wallet : TestNetWallet;
     const initWallet = await walletClass.named(nameWallet);
-    if(readUnit && (readUnit=="bch" || readUnit=="sat")) bchUnit.value = readUnit;
+    if(readUnit && (readUnit=="bch" || readUnit=="sat")) store.bchUnit = readUnit;
     setWallet(initWallet);
   }
 
@@ -58,20 +47,19 @@
 
   async function setWallet(newWallet: TestNetWallet){
     changeView(1);
-    wallet.value = newWallet;
+    store.wallet = newWallet;
     console.time('Balance Promises');
-    const promiseWalletBalance = wallet.value.getBalance() as BalanceResponse;
-    const promiseMaxAmountToSend = wallet.value.getMaxAmountToSend();
-    const promiseGetFungibleTokens = wallet.value.getAllTokenBalances();
-    const promiseGetNFTs = wallet.value.getAllNftTokenBalances();
+    const promiseWalletBalance = store.wallet.getBalance() as BalanceResponse;
+    const promiseMaxAmountToSend = store.wallet.getMaxAmountToSend();
+    const promiseGetFungibleTokens = store.wallet.getAllTokenBalances();
+    const promiseGetNFTs = store.wallet.getAllNftTokenBalances();
     const balancePromises: any[] = [promiseWalletBalance, promiseGetFungibleTokens, promiseGetNFTs,promiseMaxAmountToSend];
     const [resultWalletBalance, resultGetFungibleTokens, resultGetNFTs, resultMaxAmountToSend] = await Promise.all(balancePromises);
     console.timeEnd('Balance Promises');
     let tokenCategories = Object.keys({...resultGetFungibleTokens, ...resultGetNFTs});
     balance.value = resultWalletBalance;
-    nrTokenCategories.value = tokenCategories.length;
     maxAmountToSend.value = resultMaxAmountToSend;
-    const utxosPromise = wallet.value?.getAddressUtxos();
+    const utxosPromise = store.wallet?.getAddressUtxos();
     await updateTokenList(resultGetFungibleTokens, resultGetNFTs);
     setUpWalletSubscriptions();
     // get plannedTokenId
@@ -81,12 +69,11 @@
     console.time('importRegistries');
     await importRegistries(tokenCategories);
     console.timeEnd('importRegistries');
-    // timeout needed for correct rerender
-    bcmrRegistries.value = BCMR.getRegistries();
+    nrBcmrRegistries.value = BCMR.getRegistries().length ?? 0;
   }
 
   async function updateTokenList(resultGetFungibleTokens: any, resultGetNFTs: any){
-    if(!wallet.value) return // should never happen
+    if(!store.wallet) return // should never happen
     // Get NFT data
     const arrayTokens:TokenData[] = [];
     for (const tokenId of Object.keys(resultGetFungibleTokens)) {
@@ -95,7 +82,7 @@
     console.time('Utxo Promises');
     const nftUtxoPromises = [];
     for (const tokenId of Object.keys(resultGetNFTs)) {
-      nftUtxoPromises.push(wallet.value.getTokenUtxos(tokenId));
+      nftUtxoPromises.push(store.wallet.getTokenUtxos(tokenId));
     }
     const nftUtxoResults = await Promise.all(nftUtxoPromises);
     for (const nftUtxos of nftUtxoResults) {
@@ -108,36 +95,32 @@
   }
 
   async function setUpWalletSubscriptions(){
-    const cancelWatchBchtxs = wallet.value?.watchBalance(async (newBalance) => {
+    const cancelWatchBchtxs = store.wallet?.watchBalance(async (newBalance) => {
       balance.value = newBalance;
-      maxAmountToSend.value = await wallet.value?.getMaxAmountToSend();
+      maxAmountToSend.value = await store.wallet?.getMaxAmountToSend();
     });
-    const cancelWatchTokenTxs = wallet.value?.watchAddressTokenTransactions(async(tx) => {
-      if(!wallet.value) return // should never happen
-      const walletPkh = binToHex(wallet.value.getPublicKeyHash() as Uint8Array);
+    const cancelWatchTokenTxs = store.wallet?.watchAddressTokenTransactions(async(tx) => {
+      if(!store.wallet) return // should never happen
+      const walletPkh = binToHex(store.wallet.getPublicKeyHash() as Uint8Array);
       const tokenOutput = tx.vout.find(elem => elem.scriptPubKey.hex.includes(walletPkh));
       const tokenId = tokenOutput?.tokenData?.category;
       if(!tokenId) return;
       const previousTokenList = tokenList.value;
       const isNewCategory = !previousTokenList?.find(elem => elem.tokenId == tokenId);
-      const promiseGetFungibleTokens = wallet.value.getAllTokenBalances();
-      const promiseGetNFTs = wallet.value.getAllNftTokenBalances();
+      const promiseGetFungibleTokens = store.wallet.getAllTokenBalances();
+      const promiseGetNFTs = store.wallet.getAllNftTokenBalances();
       const balancePromises: any[] = [promiseGetFungibleTokens, promiseGetNFTs];
       const [resultGetFungibleTokens, resultGetNFTs] = await Promise.all(balancePromises);
-      await updateTokenList(resultGetFungibleTokens, resultGetNFTs);
-      // Dynamically import token metadata
+      // Dynamically import tokenmetadata
       if(isNewCategory){
         await importRegistries([tokenId]);
-        // timeout needed for correct rerender
-        await new Promise(resolve => setTimeout(resolve, 10));
-        // Deep copy to trigger watch functions
-        bcmrRegistries.value = [...BCMR.getRegistries()];
       }
+      await updateTokenList(resultGetFungibleTokens, resultGetNFTs);
     });
   }
 
   function changeUnit(newUnit: "bch" | "sat"){
-    bchUnit.value = newUnit;
+    store.bchUnit = newUnit;
     localStorage.setItem("unit", newUnit);
     changeView(1);
   }
@@ -149,7 +132,6 @@
     localStorage.setItem("network", newNetwork);
     // reset wallet to default state
     balance.value = undefined;
-    nrTokenCategories.value = undefined;
     maxAmountToSend.value = undefined;
     plannedTokenId.value = undefined;
     tokenList.value = null;
@@ -194,19 +176,11 @@
     </nav>
   </header>
   <main style="margin: 20px auto; max-width: 75rem;">
-    <newWalletView v-if="!wallet" @init-wallet="(arg) => setWallet(arg)"/>
-    <bchWalletView v-if="displayView == 1" :wallet="(wallet as TestNetWallet | null )" :balance="balance" :nrTokenCategories="nrTokenCategories" :maxAmountToSend="maxAmountToSend" :bchUnit="bchUnit"/>
-    <myTokensView v-if="displayView == 2" :wallet="(wallet as TestNetWallet | null )" :tokenList="tokenList" :bcmrRegistries="bcmrRegistries" :chaingraph="chaingraph" :ipfsGateway="ipfsGateway"/>
-    <createTokensView v-if="displayView == 3" :wallet="(wallet as TestNetWallet | null )" :balance="balance" :plannedTokenId="plannedTokenId"/>
+    <newWalletView v-if="!store.wallet" @init-wallet="(arg) => setWallet(arg)"/>
+    <bchWalletView v-if="displayView == 1" :balance="balance" :nrTokenCategories="nrTokenCategories" :maxAmountToSend="maxAmountToSend"/>
+    <myTokensView v-if="displayView == 2" :tokenList="tokenList" :nrBcmrRegistries="nrBcmrRegistries"/>
+    <createTokensView v-if="displayView == 3" :balance="balance" :plannedTokenId="plannedTokenId"/>
     <connectView v-if="displayView == 4"/>
-    <settingsMenu v-if="displayView == 5" @change-network="(arg) => changeNetwork(arg)" @change-unit="(arg) => changeUnit(arg)" :wallet="(wallet as TestNetWallet | null )" :network="network" :bchUnit="bchUnit"/>
+    <settingsMenu v-if="displayView == 5" @change-network="(arg) => changeNetwork(arg)" @change-unit="(arg) => changeUnit(arg)"/>
   </main>
 </template>
-
-<style scoped>
-nav div{
-  padding: 1rem 1.8rem;
-  cursor: pointer;
-  border-bottom: 2px solid var(--color-lightGrey);
-}
-</style>

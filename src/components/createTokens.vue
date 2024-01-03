@@ -1,13 +1,14 @@
 <script setup lang="ts">
-  import { ref, toRefs, computed } from 'vue';
-  import { Wallet, TestNetWallet, BalanceResponse } from "mainnet-js"
+  import { ref, toRefs } from 'vue';
+  import { BalanceResponse } from "mainnet-js"
+  import { useStore } from '../store'
+  const store = useStore()
 
   const props = defineProps<{
-    wallet: Wallet | TestNetWallet | null,
     balance: BalanceResponse | undefined
     plannedTokenId: string | undefined
   }>()
-  const { wallet, balance, plannedTokenId } = toRefs(props);
+  const { balance, plannedTokenId } = toRefs(props);
 
   const selectedTokenType = ref("-select-");
 

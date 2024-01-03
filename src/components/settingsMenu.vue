@@ -1,18 +1,12 @@
 <script setup lang="ts">
   import Toggle from '@vueform/toggle'
-  import { ref, toRefs } from 'vue'
-  import { Wallet, TestNetWallet  } from "mainnet-js"
-
-  const props = defineProps<{
-    wallet: Wallet | TestNetWallet | null,
-    network: "mainnet" | "chipnet",
-    bchUnit: "bch" | "sat"
-  }>()
-  const { wallet, network, bchUnit } = toRefs(props);
+  import { ref } from 'vue'
+  import { useStore } from '../store'
+  const store = useStore()
 
   const displayeSeedphrase = ref(false);
-  const selectedNetwork = ref(network.value);
-  const selectedUnit  = ref(bchUnit.value);
+  const selectedNetwork = ref(store.network);
+  const selectedUnit  = ref(store.bchUnit);
   const darkmode  = ref(false);
   const emit = defineEmits(['changeUnit','changeNetwork']);
 
@@ -59,10 +53,10 @@
     <input @click="toggleShowSeedphrase()" class="button primary" type="button" style="padding: 1rem 1.5rem; display: block;" 
       :value="displayeSeedphrase? 'Hide seed phrase' : 'Show seed phrase'"
     >
-    <div v-if="displayeSeedphrase" id="seedphrase"> {{ wallet?.mnemonic }}</div>
+    <div v-if="displayeSeedphrase" id="seedphrase"> {{store.wallet?.mnemonic }}</div>
     <br>
-    <span style="margin-top:15px">Derivation path of this wallet is {{ wallet?.derivationPath }}</span>
-    <div style="margin-top:15px">Remove wallet data from browser</div>
+    <span style="margin-top:15px">Derivation path of this wallet is {{store.wallet?.derivationPath }}</span>
+    <div style="margin-top:15px">Removestore.wallet data from browser</div>
     <input @click="confirmDeleteWallet()" type="button" id="burnNFT" value="Delete wallet" class="button error" style="display: block;">
   </fieldset>
 </template>

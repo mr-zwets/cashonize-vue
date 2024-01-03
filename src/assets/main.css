@@ -19,6 +19,11 @@ header{
   flex-direction: column;
   text-align: center;
 }
+nav div{
+  padding: 1rem 1.8rem;
+  cursor: pointer;
+  border-bottom: 2px solid var(--color-lightGrey);
+}
 b {
   font-weight: 700;
 }

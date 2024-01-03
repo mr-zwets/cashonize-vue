@@ -2,5 +2,8 @@ import './assets/main.css'
 
 import { createApp } from 'vue'
 import AsyncApp from './AsyncApp.vue'
+import { createPinia } from 'pinia'
 
-createApp(AsyncApp).mount('#app')
+const app = createApp(AsyncApp)
+app.use(createPinia())
+app.mount('#app')

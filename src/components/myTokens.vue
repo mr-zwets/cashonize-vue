@@ -1,24 +1,20 @@
 
 <script setup lang="ts">
   import tokenItem from './tokenItem.vue'
-  import { Wallet, TestNetWallet } from "mainnet-js"
   import type { TokenData } from "../interfaces/interfaces"
 
   defineProps<{
-    wallet: Wallet | TestNetWallet | null,
     tokenList: Array<TokenData> | null,
-    bcmrRegistries: any[] | undefined,
-    chaingraph: string,
-    ipfsGateway: string
+    nrBcmrRegistries: number| undefined,
   }>()
 </script>
 
 <template>
-  <div v-if="!tokenList || !bcmrRegistries">Loading tokendata ...</div>
+  <div v-if="nrBcmrRegistries == undefined">Loading tokendata ...</div>
   <div v-if="tokenList?.length == 0"> No tokens in Wallet </div>
-  <div v-if="bcmrRegistries != undefined">
+  <div v-if="nrBcmrRegistries != undefined">
     <div v-for="tokenData in tokenList" :key="tokenData.tokenId.slice(0,6)">
-      <tokenItem :wallet="wallet" :tokenData="tokenData" :bcmrRegistries="bcmrRegistries" :chaingraph="chaingraph" :ipfsGateway="ipfsGateway"/>
+      <tokenItem :tokenData="tokenData"/>
     </div>
   </div>
 </template>

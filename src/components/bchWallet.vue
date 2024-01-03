@@ -1,24 +1,24 @@
 <script setup lang="ts">
   import { ref, toRefs, computed } from 'vue'
-  import { Wallet, TestNetWallet, BalanceResponse, convert } from "mainnet-js"
+  import { BalanceResponse, convert } from "mainnet-js"
   import { defineCustomElements } from '@bitjson/qr-code';
+  import { useStore } from '../store'
+  const store = useStore()
 
   const props = defineProps<{
-    wallet: Wallet | TestNetWallet | null,
     balance?: BalanceResponse,
     maxAmountToSend?: BalanceResponse | undefined,
     nrTokenCategories?: number,
-    bchUnit: "bch" | "sat"
   }>()
-  const { wallet, balance, maxAmountToSend, nrTokenCategories, bchUnit } = toRefs(props);
+  const { balance, maxAmountToSend, nrTokenCategories } = toRefs(props);
 
   const bchDisplayUnit = computed(() => {
-    if(wallet.value?.network == "mainnet") return bchUnit.value == "bch"? " BCH" : " sats"
-    else return bchUnit.value == "bch"? " tBCH" : " tsats"
+    if(store.network == "mainnet") return store.bchUnit == "bch"? " BCH" : " sats"
+    else return store.bchUnit == "bch"? " tBCH" : " tsats"
   })
   const displayUnitLong = computed(() => {
-    if(wallet.value?.network == "mainnet") return bchUnit.value == "bch"? " BCH" : " satoshis"
-    else return bchUnit.value == "bch"? " tBCH" : " testnet satoshis"
+    if(store.network == "mainnet") return store.bchUnit == "bch"? " BCH" : " satoshis"
+    else return store.bchUnit == "bch"? " tBCH" : " testnet satoshis"
   })
 
   defineCustomElements(window);
@@ -31,7 +31,7 @@
 
   const explorerUrlMainnet = "https://explorer.bitcoinunlimited.info";
   const explorerUrlChipnet = "https://chipnet.chaingraph.cash";
-  let explorerUrl = (wallet.value?.network == "mainnet")? explorerUrlMainnet : explorerUrlChipnet;
+  let explorerUrl = (store.network == "mainnet")? explorerUrlMainnet : explorerUrlChipnet;
 
   function switchAddressTypeQr(){
     displayeBchQr.value = !displayeBchQr.value;
@@ -44,7 +44,7 @@
       usdSendAmount.value = undefined
       return
     }
-    const newUsdValue = await convert(bchSendAmount.value, bchUnit.value, "usd");
+    const newUsdValue = await convert(bchSendAmount.value, store.bchUnit, "usd");
     usdSendAmount.value = Number(newUsdValue.toFixed(2));
   }
   async function setBchAmount() {
@@ -52,13 +52,13 @@
       bchSendAmount.value = undefined
       return
     }
-    const newBchValue = await convert(usdSendAmount.value, "usd", bchUnit.value);
+    const newBchValue = await convert(usdSendAmount.value, "usd", store.bchUnit);
     bchSendAmount.value = Number(newBchValue);
   }
   async function useMaxBchAmount(){
     try{
-      if(maxAmountToSend?.value && maxAmountToSend?.value[bchUnit.value]){
-        bchSendAmount.value = maxAmountToSend.value[bchUnit.value];
+      if(maxAmountToSend?.value && maxAmountToSend?.value[store.bchUnit]){
+        bchSendAmount.value = maxAmountToSend.value[store.bchUnit];
         setUsdAmount()
       }
       else throw("expected a number");
@@ -66,11 +66,11 @@
       console.log(error)
     }
   }
-  async function sendBch(wallet: TestNetWallet | null){
+  async function sendBch(){
     try{
-      if(!wallet) return;
+      if(!store.wallet) return;
       if(!bchSendAmount.value) throw("No valid amount provided!")
-      const { txId } = await wallet.send([{ cashaddr: destinationAddr.value, value: bchSendAmount.value, unit: bchUnit.value}]);
+      const { txId } = await store.wallet.send([{ cashaddr: destinationAddr.value, value: bchSendAmount.value, unit: store.bchUnit}]);
       alert(`Sent ${bchSendAmount.value, displayUnitLong.value} to ${destinationAddr.value} \n${explorerUrl}/tx/${txId}`);
       console.log(`Sent ${bchSendAmount.value, displayUnitLong.value} to ${destinationAddr.value} \n${explorerUrl}/tx/${txId}`);
       bchSendAmount.value = undefined;
@@ -84,7 +84,7 @@
 
 <template>
   <fieldset style="margin-top: 20px; padding-top: 2rem; max-width: 75rem; margin: auto;">
-    <div v-if="wallet?.network == 'mainnet'" style="font-size: 1.2em">
+    <div v-if="store.network == 'mainnet'" style="font-size: 1.2em">
       USD balance:  
       <span style="color: hsla(160, 100%, 37%, 1);">
         {{ balance && balance.usd != undefined ? balance.usd + " $": "" }}
@@ -93,7 +93,7 @@
     <span>
       BCH balance:  
       <span style="color: hsla(160, 100%, 37%, 1);">
-        {{ balance && balance[bchUnit] != undefined ? balance[bchUnit] + displayUnitLong : "" }}
+        {{ balance && balance[store.bchUnit] != undefined ? balance[store.bchUnit] + displayUnitLong : "" }}
       </span>
     </span>
     <span>
@@ -104,15 +104,15 @@
     </span>
     <div>
       BCH address: 
-      <span class="depositAddr">{{ wallet?.address ?? "" }} </span>
-      <img class="copyIcon" src="/images/copyGrey.svg" @click="() => copyToClipboard(wallet?.address)">
+      <span class="depositAddr">{{ store.wallet?.address ?? "" }} </span>
+      <img class="copyIcon" src="/images/copyGrey.svg" @click="() => copyToClipboard(store.wallet?.address)">
     </div>
     <div>
       Token address:
-      <span class="depositAddr">{{ wallet?.tokenaddr ?? "" }}</span>
-      <img class="copyIcon" src="/images/copyGrey.svg" @click="() => copyToClipboard(wallet?.tokenaddr)">
+      <span class="depositAddr">{{ store.wallet?.tokenaddr ?? "" }}</span>
+      <img class="copyIcon" src="/images/copyGrey.svg" @click="() => copyToClipboard(store.wallet?.tokenaddr)">
     </div>
-    <qr-code id="qrCode" :contents="displayeBchQr? wallet?.address : wallet?.tokenaddr" style="display: block; width: 230px; height: 230px; margin: 5px auto 0 auto;">
+    <qr-code id="qrCode" :contents="displayeBchQr? store.wallet?.address : store.wallet?.tokenaddr" style="display: block; width: 230px; height: 230px; margin: 5px auto 0 auto;">
       <img :src="displayeBchQr? 'images/bch-icon.png':'images/tokenicon.png'" slot="icon" /> <!-- eslint-disable-line -->
     </qr-code>
     <div style="text-align: center;">
@@ -128,11 +128,11 @@
         </span>
         <span style="position: relative; width: 50%; margin-left: 5px;">
           <input v-model="usdSendAmount" @input="setBchAmount" id="sendAmount" type="number" placeholder="amount">
-          <i class="input-icon" style="color: black;">{{wallet?.network == "mainnet"? "USD $":"tUsd $"}}</i>
+          <i class="input-icon" style="color: black;">{{store.network == "mainnet"? "USD $":"tUsd $"}}</i>
         </span> 
             <button @click="useMaxBchAmount()" style="margin-left: 5px;">max</button>
       </span>
     </div>
-    <input @click="sendBch(wallet)" type="button" class="primaryButton" id="send" value="Send" style="margin-top: 8px;">
+    <input @click="sendBch()" type="button" class="primaryButton" id="send" value="Send" style="margin-top: 8px;">
   </fieldset>
 </template>

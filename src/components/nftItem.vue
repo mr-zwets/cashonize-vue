@@ -1,21 +1,20 @@
 <script setup lang="ts">
-  import { ref, onMounted, watch, toRefs, computed } from 'vue';
-  import { Wallet, TestNetWallet, TokenSendRequest, TokenMintRequest, BCMR } from "mainnet-js"
+  import { ref, onMounted, toRefs, computed } from 'vue';
+  import { TokenSendRequest, TokenMintRequest } from "mainnet-js"
   import { type UtxoI } from "mainnet-js"
   // @ts-ignore
   import { createIcon } from '@download/blockies';
   import type { IdentitySnapshot } from "mainnet-js"
+  import { useStore } from '../store'
+  const store = useStore()
 
   const props = defineProps<{
-    wallet: Wallet | TestNetWallet | null,
     nftData: UtxoI,
     tokenMetaData: IdentitySnapshot | null,
-    chaingraph: string
-    ipfsGateway: string
     explorerUrl: string
     id: string
   }>()
-  const { wallet, nftData, tokenMetaData, ipfsGateway, explorerUrl, id } = toRefs(props);
+  const { nftData, tokenMetaData, explorerUrl, id } = toRefs(props);
 
   const displaySendNft = ref(false);
   const displayNftInfo = ref(false);
@@ -36,7 +35,7 @@
     const nftIconUri = nftMetadata.value?.uris?.icon;
     if(nftIconUri) tokenIconUri = nftIconUri;
     if(tokenIconUri?.startsWith('ipfs://')){
-      return ipfsGateway.value + tokenIconUri.slice(7);
+      return store.ipfsGateway + tokenIconUri.slice(7);
     }
     return tokenIconUri;
   })
@@ -67,14 +66,14 @@
     iconDiv?.appendChild(icon);
   })
 
-  async function sendNft(wallet: TestNetWallet | null){
+  async function sendNft(){
     try{
-      if(!wallet || nftData.value?.token) return;
+      if(!store.wallet || nftData.value?.token) return;
       const nftInfo = nftData.value.token;
       const tokenId = nftInfo?.tokenId as string;
       const tokenCommitment = nftInfo?.commitment;
       const tokenCapability = nftInfo?.capability;
-      const { txId } = await wallet.send([
+      const { txId } = await store.wallet.send([
         new TokenSendRequest({
           cashaddr: destinationAddr.value,
           tokenId: tokenId,
@@ -93,10 +92,10 @@
       alert(error);
     }
   }
-  async function mintNfts(wallet: TestNetWallet | null) {
+  async function mintNfts() {
     try {
-      if(!wallet || !nftData.value?.token) return;
-      const tokenAddr = wallet.tokenaddr;
+      if(!store.wallet || !nftData.value?.token) return;
+      const tokenAddr = store.wallet.tokenaddr;
       const unique = mintUniqueNfts.value === 'yes';
       let tokenCommitment = unique? "" : mintCommitment.value;
       const nftInfo = nftData.value.token;
@@ -125,7 +124,7 @@
         })
         arraySendrequests.push(mintRequest);
       }
-      const { txId } = await wallet.tokenMint(tokenId, arraySendrequests);
+      const { txId } = await store.wallet.tokenMint(tokenId, arraySendrequests);
       const displayId = `${tokenId.slice(0, 20)}...${tokenId.slice(-10)}`;
       const commitmentText= tokenCommitment? `with commitment ${tokenCommitment}`: "";
       if(mintAmount == 1){
@@ -137,14 +136,14 @@
       }
     } catch (error) { alert(error) }
   }
-  async function burnNft(wallet: TestNetWallet | null) {
+  async function burnNft() {
     const nftInfo = nftData.value.token;
       const tokenId = nftInfo?.tokenId as string;
     let burnWarning = "You ae about to burn a minting NFT, this can not be unddone. \nAre you sure you want to burn the NFT?";
     if (confirm(burnWarning) != true) return;
-    if(!wallet) return;
+    if(!store.wallet) return;
     try {
-      const { txId } = await wallet.tokenBurn(
+      const { txId } = await store.wallet.tokenBurn(
         {
           tokenId: tokenId,
           capability: "minting",
@@ -222,7 +221,7 @@
           Send this NFT to
           <p class="grouped">
             <input v-model="destinationAddr" id="tokenAddress" placeholder="token address">
-            <input @click="sendNft(wallet)" type="button" class="primaryButton" id="sendNFT" value="Send NFT">
+            <input @click="sendNft()" type="button" class="primaryButton" id="sendNFT" value="Send NFT">
           </p>
         </div>
         <div id="nftMint" v-if="displayMintNfts" style="margin-top: 10px;">
@@ -238,13 +237,13 @@
           </p>
           <span class="grouped">
             <input v-model="destinationAddr" placeholder="destinationAddress"> 
-            <input @click="mintNfts(wallet)" type="button" id="mintNFTs" value="Mint NFTs">
+            <input @click="mintNfts()" type="button" id="mintNFTs" value="Mint NFTs">
           </span>
         </div>
         <div v-if="displayBurnNft" id="nftBurn" style="margin-top: 10px;">
           Burn this NFT so no new NFTs of this category can be minted
           <br>
-          <input @click="burnNft(wallet)" type="button" id="burnNFT" value="burn NFT" class="button error">
+          <input @click="burnNft()" type="button" id="burnNFT" value="burn NFT" class="button error">
         </div>
         <!---<div id="authTransfer" class="hide" style="margin-top: 10px;">
           Transfer the authority to change the token's metadata to another wallet <br>
