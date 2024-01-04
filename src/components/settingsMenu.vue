@@ -7,7 +7,7 @@
   const displayeSeedphrase = ref(false);
   const selectedNetwork = ref(store.network);
   const selectedUnit  = ref(store.bchUnit);
-  const darkmode  = ref(false);
+  const darkmode  = ref(store.darkMode);
   const emit = defineEmits(['changeUnit','changeNetwork']);
 
   function changeUnit(){

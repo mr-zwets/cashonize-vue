@@ -7,10 +7,10 @@
 
   const props = defineProps<{
     balance?: BalanceResponse,
-    maxAmountToSend?: BalanceResponse | undefined,
-    nrTokenCategories?: number,
+    maxAmountToSend?: BalanceResponse | undefined
   }>()
-  const { balance, maxAmountToSend, nrTokenCategories } = toRefs(props);
+  const { balance, maxAmountToSend } = toRefs(props);
+  const nrTokenCategories = computed(() => store.tokenList?.length)
 
   const bchDisplayUnit = computed(() => {
     if(store.network == "mainnet") return store.bchUnit == "bch"? " BCH" : " sats"

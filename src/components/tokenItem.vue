@@ -124,6 +124,7 @@
       tokenSendAmount.value = "";
       destinationAddr.value = "";
       displaySendTokens.value = false;
+      await store.updateTokenList(undefined, undefined);
     } catch(error){
       console.log(error);
       alert(error);
@@ -150,6 +151,7 @@
       console.log(`Sent NFT of category ${displayId} to ${destinationAddr.value} \n${explorerUrl}/tx/${txId}`);
       destinationAddr.value = "";
       displaySendNft.value = false;
+      await store.updateTokenList(undefined, undefined);
     } catch(error){
       console.log(error)
     }
@@ -393,7 +395,7 @@
       </div>
     </fieldset>
 
-    <div v-if="displayChildNfts">
+    <div v-if="displayChildNfts && (tokenData.nfts?.length ?? 0) > 1">
       <div v-for="(nft, index) in tokenData.nfts" :key="'nft'+tokenData.tokenId.slice(0,4) + index">
         <nftItem :nftData="nft" :tokenMetaData="tokenMetaData" :explorerUrl="explorerUrl" :id="'nft'+tokenData.tokenId.slice(0,4) + index"/>
       </div>

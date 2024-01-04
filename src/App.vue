@@ -7,7 +7,6 @@
   import createTokensView from './components/createTokens.vue'
   import { ref, computed } from 'vue'
   import { Wallet, TestNetWallet, BalanceResponse, BCMR, binToHex } from "mainnet-js"
-  import type { TokenData } from "./interfaces/interfaces"
   import { useStore } from './store'
   const store = useStore()
 
@@ -18,13 +17,11 @@
   // reactive state
   const balance = ref(undefined as (BalanceResponse | undefined));
   const maxAmountToSend = ref(undefined as (BalanceResponse | undefined));
-  const tokenList = ref(null as (Array<TokenData> | null));
   const displayView = ref(undefined as (number | undefined));
   const nrBcmrRegistries = ref(undefined as (number | undefined));
   const plannedTokenId = ref(undefined as (undefined | string));
 
   const bcmrIndexer = computed(() => store.network == "mainnet" ? defaultBcmrIndexer : defaultBcmrIndexerChipnet)
-  const nrTokenCategories = computed(() => tokenList.value?.length)
   
   // check if wallet exists
   const mainnetWalletExists = await Wallet.namedExists(nameWallet);
@@ -60,7 +57,7 @@
     balance.value = resultWalletBalance;
     maxAmountToSend.value = resultMaxAmountToSend;
     const utxosPromise = store.wallet?.getAddressUtxos();
-    await updateTokenList(resultGetFungibleTokens, resultGetNFTs);
+    await store.updateTokenList(resultGetFungibleTokens, resultGetNFTs);
     setUpWalletSubscriptions();
     // get plannedTokenId
     const walletUtxos = await utxosPromise;
@@ -70,28 +67,6 @@
     await importRegistries(tokenCategories);
     console.timeEnd('importRegistries');
     nrBcmrRegistries.value = BCMR.getRegistries().length ?? 0;
-  }
-
-  async function updateTokenList(resultGetFungibleTokens: any, resultGetNFTs: any){
-    if(!store.wallet) return // should never happen
-    // Get NFT data
-    const arrayTokens:TokenData[] = [];
-    for (const tokenId of Object.keys(resultGetFungibleTokens)) {
-      arrayTokens.push({ tokenId, amount: resultGetFungibleTokens[tokenId] });
-    }
-    console.time('Utxo Promises');
-    const nftUtxoPromises = [];
-    for (const tokenId of Object.keys(resultGetNFTs)) {
-      nftUtxoPromises.push(store.wallet.getTokenUtxos(tokenId));
-    }
-    const nftUtxoResults = await Promise.all(nftUtxoPromises);
-    for (const nftUtxos of nftUtxoResults) {
-      const tokenId = nftUtxos[0].token?.tokenId;
-      if(!tokenId) return // should never happen
-      arrayTokens.push({ tokenId, nfts: nftUtxos });
-    }
-    console.timeEnd('Utxo Promises');
-    tokenList.value = arrayTokens;
   }
 
   async function setUpWalletSubscriptions(){
@@ -105,7 +80,7 @@
       const tokenOutput = tx.vout.find(elem => elem.scriptPubKey.hex.includes(walletPkh));
       const tokenId = tokenOutput?.tokenData?.category;
       if(!tokenId) return;
-      const previousTokenList = tokenList.value;
+      const previousTokenList = store.tokenList;
       const isNewCategory = !previousTokenList?.find(elem => elem.tokenId == tokenId);
       const promiseGetFungibleTokens = store.wallet.getAllTokenBalances();
       const promiseGetNFTs = store.wallet.getAllNftTokenBalances();
@@ -115,7 +90,7 @@
       if(isNewCategory){
         await importRegistries([tokenId]);
       }
-      await updateTokenList(resultGetFungibleTokens, resultGetNFTs);
+      await store.updateTokenList(resultGetFungibleTokens, resultGetNFTs);
     });
   }
 
@@ -134,7 +109,8 @@
     balance.value = undefined;
     maxAmountToSend.value = undefined;
     plannedTokenId.value = undefined;
-    tokenList.value = null;
+    store.tokenList = null;
+    nrBcmrRegistries.value = undefined;
     changeView(1);
   }
 
@@ -177,8 +153,8 @@
   </header>
   <main style="margin: 20px auto; max-width: 75rem;">
     <newWalletView v-if="!store.wallet" @init-wallet="(arg) => setWallet(arg)"/>
-    <bchWalletView v-if="displayView == 1" :balance="balance" :nrTokenCategories="nrTokenCategories" :maxAmountToSend="maxAmountToSend"/>
-    <myTokensView v-if="displayView == 2" :tokenList="tokenList" :nrBcmrRegistries="nrBcmrRegistries"/>
+    <bchWalletView v-if="displayView == 1" :balance="balance" :maxAmountToSend="maxAmountToSend"/>
+    <myTokensView v-if="displayView == 2" :nrBcmrRegistries="nrBcmrRegistries"/>
     <createTokensView v-if="displayView == 3" :balance="balance" :plannedTokenId="plannedTokenId"/>
     <connectView v-if="displayView == 4"/>
     <settingsMenu v-if="displayView == 5" @change-network="(arg) => changeNetwork(arg)" @change-unit="(arg) => changeUnit(arg)"/>

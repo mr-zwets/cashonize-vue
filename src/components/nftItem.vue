@@ -68,7 +68,7 @@
 
   async function sendNft(){
     try{
-      if(!store.wallet || nftData.value?.token) return;
+      if(!store.wallet) return;
       const nftInfo = nftData.value.token;
       const tokenId = nftInfo?.tokenId as string;
       const tokenCommitment = nftInfo?.commitment;
@@ -87,6 +87,7 @@
       console.log(`Sent NFT of category ${displayId} to ${destinationAddr.value} \n${explorerUrl.value}/tx/${txId}`);
       destinationAddr.value = "";
       displaySendNft.value = false;
+      await store.updateTokenList(undefined, undefined);
     } catch(error){
       console.log(error);
       alert(error);
