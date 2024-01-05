@@ -19,7 +19,6 @@
   const maxAmountToSend = ref(undefined as (BalanceResponse | undefined));
   const displayView = ref(undefined as (number | undefined));
   const nrBcmrRegistries = ref(undefined as (number | undefined));
-  const plannedTokenId = ref(undefined as (undefined | string));
 
   const bcmrIndexer = computed(() => store.network == "mainnet" ? defaultBcmrIndexer : defaultBcmrIndexerChipnet)
   
@@ -64,7 +63,7 @@
     // get plannedTokenId
     const walletUtxos = await utxosPromise;
     const preGenesisUtxo = walletUtxos?.find(utxo => !utxo.token && utxo.vout === 0);
-    plannedTokenId.value = preGenesisUtxo?.txid ?? "";
+    store.plannedTokenId = preGenesisUtxo?.txid ?? "";
     console.time('importRegistries');
     await importRegistries(tokenCategories);
     console.timeEnd('importRegistries');
@@ -116,7 +115,7 @@
     // reset wallet to default state
     balance.value = undefined;
     maxAmountToSend.value = undefined;
-    plannedTokenId.value = undefined;
+    store.plannedTokenId = undefined;
     store.tokenList = null;
     nrBcmrRegistries.value = undefined;
     changeView(1);
@@ -164,7 +163,7 @@
     <newWalletView v-if="!store.wallet" @init-wallet="(arg) => setWallet(arg)"/>
     <bchWalletView v-if="displayView == 1" :balance="balance" :maxAmountToSend="maxAmountToSend"/>
     <myTokensView v-if="displayView == 2" :nrBcmrRegistries="nrBcmrRegistries"/>
-    <createTokensView v-if="displayView == 3" :balance="balance" :plannedTokenId="plannedTokenId"/>
+    <createTokensView v-if="displayView == 3" :balance="balance"/>
     <connectView v-if="displayView == 4"/>
     <settingsMenu v-if="displayView == 5" @change-network="(arg) => changeNetwork(arg)" @change-unit="(arg) => changeUnit(arg)" @change-dark-mode="(arg) => changeDarkMode(arg)"/>
   </main>

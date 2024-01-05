@@ -18,8 +18,9 @@ export const useStore = defineStore('store', () => {
   // Wallet State
   const wallet = ref(null as (Wallet |TestNetWallet | null));
   const network = computed(() => wallet.value?.network == "mainnet" ? "mainnet" : "chipnet")
-  let explorerUrl = computed(() => network.value == "mainnet" ? explorerUrlMainnet : explorerUrlChipnet);
+  const explorerUrl = computed(() => network.value == "mainnet" ? explorerUrlMainnet : explorerUrlChipnet);
   const tokenList = ref(null as (Array<TokenData> | null))
+  const plannedTokenId = ref(undefined as (undefined | string));
 
   // Global settings
   const bchUnit = ref("bch" as ("bch" | "sat"));
@@ -56,5 +57,5 @@ export const useStore = defineStore('store', () => {
     tokenList.value = arrayTokens;
   }
 
-  return { wallet, network, explorerUrl, tokenList, updateTokenList, bchUnit, chaingraph, ipfsGateway, darkMode }
+  return { wallet, network, explorerUrl, tokenList, updateTokenList, plannedTokenId, bchUnit, chaingraph, ipfsGateway, darkMode }
 })
