@@ -14,12 +14,7 @@
   const defaultBcmrIndexer = "https://bcmr.paytaca.com/api";
   const defaultBcmrIndexerChipnet = "https://bcmr-chipnet.paytaca.com/api";
 
-  // reactive state
-  const balance = ref(undefined as (BalanceResponse | undefined));
-  const maxAmountToSend = ref(undefined as (BalanceResponse | undefined));
   const displayView = ref(undefined as (number | undefined));
-  const nrBcmrRegistries = ref(undefined as (number | undefined));
-
   const bcmrIndexer = computed(() => store.network == "mainnet" ? defaultBcmrIndexer : defaultBcmrIndexerChipnet)
   
   // check if wallet exists
@@ -50,8 +45,8 @@
     const [resultWalletBalance, resultGetFungibleTokens, resultGetNFTs, resultMaxAmountToSend] = await Promise.all(balancePromises);
     console.timeEnd('Balance Promises');
     let tokenCategories = Object.keys({...resultGetFungibleTokens, ...resultGetNFTs});
-    balance.value = resultWalletBalance;
-    maxAmountToSend.value = resultMaxAmountToSend;
+    store.balance = resultWalletBalance;
+    store.maxAmountToSend = resultMaxAmountToSend;
     const utxosPromise = store.wallet?.getAddressUtxos();
     await store.updateTokenList(resultGetFungibleTokens, resultGetNFTs);
     setUpWalletSubscriptions();
@@ -62,13 +57,13 @@
     console.time('importRegistries');
     await importRegistries(tokenCategories);
     console.timeEnd('importRegistries');
-    nrBcmrRegistries.value = BCMR.getRegistries().length ?? 0;
+    store.nrBcmrRegistries = BCMR.getRegistries().length ?? 0;
   }
 
   async function setUpWalletSubscriptions(){
     const cancelWatchBchtxs = store.wallet?.watchBalance(async (newBalance) => {
-      balance.value = newBalance;
-      maxAmountToSend.value = await store.wallet?.getMaxAmountToSend();
+      store.balance = newBalance;
+      store.maxAmountToSend = await store.wallet?.getMaxAmountToSend();
     });
     const cancelWatchTokenTxs = store.wallet?.watchAddressTokenTransactions(async(tx) => {
       if(!store.wallet) return // should never happen
@@ -90,29 +85,17 @@
     });
   }
 
-  function changeDarkMode(isDarkMode:boolean){
-    store.darkMode = isDarkMode;
-    localStorage.setItem("darkMode", isDarkMode? "true" : "false");
-    isDarkMode ? document.body.classList.add("dark") : document.body.classList.remove("dark")
-  }
-
-  function changeUnit(newUnit: "bch" | "sat"){
-    store.bchUnit = newUnit;
-    localStorage.setItem("unit", newUnit);
-    changeView(1);
-  }
-
   async function changeNetwork(newNetwork: "mainnet" | "chipnet"){
     const walletClass = (newNetwork == "mainnet")? Wallet : TestNetWallet;
     const newWallet = await walletClass.named(nameWallet);
     setWallet(newWallet);
     localStorage.setItem("network", newNetwork);
     // reset wallet to default state
-    balance.value = undefined;
-    maxAmountToSend.value = undefined;
+    store.balance = undefined;
+    store.maxAmountToSend = undefined;
     store.plannedTokenId = undefined;
     store.tokenList = null;
-    nrBcmrRegistries.value = undefined;
+    store.nrBcmrRegistries = undefined;
     changeView(1);
   }
 
@@ -156,10 +139,10 @@
   </header>
   <main style="margin: 20px auto; max-width: 75rem;">
     <newWalletView v-if="!store.wallet" @init-wallet="(arg) => setWallet(arg)"/>
-    <bchWalletView v-if="displayView == 1" :balance="balance" :maxAmountToSend="maxAmountToSend"/>
-    <myTokensView v-if="displayView == 2" :nrBcmrRegistries="nrBcmrRegistries"/>
-    <createTokensView v-if="displayView == 3" :balance="balance"/>
+    <bchWalletView v-if="displayView == 1"/>
+    <myTokensView v-if="displayView == 2"/>
+    <createTokensView v-if="displayView == 3"/>
     <connectView v-if="displayView == 4"/>
-    <settingsMenu v-if="displayView == 5" @change-network="(arg) => changeNetwork(arg)" @change-unit="(arg) => changeUnit(arg)" @change-dark-mode="(arg) => changeDarkMode(arg)"/>
+    <settingsMenu v-if="displayView == 5" @change-network="(arg) => changeNetwork(arg)" @change-view="(arg) => changeView(arg)"/>
   </main>
 </template>

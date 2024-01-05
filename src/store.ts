@@ -1,6 +1,6 @@
 import { defineStore } from "pinia"
 import { ref, computed } from 'vue'
-import { Wallet, TestNetWallet, BaseWallet, Config } from "mainnet-js"
+import { Wallet, TestNetWallet, BaseWallet, Config, BalanceResponse } from "mainnet-js"
 import { IndexedDBProvider } from "@mainnet-cash/indexeddb-storage"
 import type { TokenData } from "./interfaces/interfaces"
 
@@ -17,10 +17,13 @@ const explorerUrlChipnet = "https://chipnet.chaingraph.cash";
 export const useStore = defineStore('store', () => {
   // Wallet State
   const wallet = ref(null as (Wallet |TestNetWallet | null));
+  const balance = ref(undefined as (BalanceResponse | undefined));
+  const maxAmountToSend = ref(undefined as (BalanceResponse | undefined));
   const network = computed(() => wallet.value?.network == "mainnet" ? "mainnet" : "chipnet")
   const explorerUrl = computed(() => network.value == "mainnet" ? explorerUrlMainnet : explorerUrlChipnet);
   const tokenList = ref(null as (Array<TokenData> | null))
   const plannedTokenId = ref(undefined as (undefined | string));
+  const nrBcmrRegistries = ref(undefined as (number | undefined));
 
   // Global settings
   const bchUnit = ref("bch" as ("bch" | "sat"));
@@ -66,5 +69,5 @@ export const useStore = defineStore('store', () => {
     tokenList.value = arrayTokens;
   }
 
-  return { wallet, network, explorerUrl, tokenList, updateTokenList, plannedTokenId, bchUnit, chaingraph, ipfsGateway, darkMode }
+  return { wallet, balance, maxAmountToSend, network, explorerUrl, tokenList, updateTokenList, plannedTokenId, nrBcmrRegistries, bchUnit, chaingraph, ipfsGateway, darkMode }
 })

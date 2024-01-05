@@ -8,16 +8,20 @@
   const selectedNetwork = ref(store.network);
   const selectedUnit  = ref(store.bchUnit);
   const selectedDarkMode  = ref(store.darkMode);
-  const emit = defineEmits(['changeUnit','changeNetwork','changeDarkMode']);
+  const emit = defineEmits(['changeView','changeNetwork']);
 
   function changeUnit(){
-    emit('changeUnit', selectedUnit.value);
+    store.bchUnit = selectedUnit.value;
+    localStorage.setItem("unit", selectedUnit.value);
+    emit('changeView', 1);
   }
   function changeNetwork(){
     emit('changeNetwork', selectedNetwork.value);
   }
   function changeDarkMode(){
-    emit('changeDarkMode', selectedDarkMode.value);
+    store.darkMode = selectedDarkMode.value;
+    localStorage.setItem("darkMode", selectedDarkMode.value? "true" : "false");
+    selectedDarkMode.value ? document.body.classList.add("dark") : document.body.classList.remove("dark")
   }
   function toggleShowSeedphrase(){
     displayeSeedphrase.value = !displayeSeedphrase.value;

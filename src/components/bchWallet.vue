@@ -1,15 +1,10 @@
 <script setup lang="ts">
-  import { ref, toRefs, computed } from 'vue'
-  import { BalanceResponse, convert } from "mainnet-js"
+  import { ref, computed } from 'vue'
+  import { convert } from "mainnet-js"
   import { defineCustomElements } from '@bitjson/qr-code';
   import { useStore } from '../store'
   const store = useStore()
 
-  const props = defineProps<{
-    balance?: BalanceResponse,
-    maxAmountToSend?: BalanceResponse | undefined
-  }>()
-  const { balance, maxAmountToSend } = toRefs(props);
   const nrTokenCategories = computed(() => store.tokenList?.length)
 
   const bchDisplayUnit = computed(() => {
@@ -53,8 +48,8 @@
   }
   async function useMaxBchAmount(){
     try{
-      if(maxAmountToSend?.value && maxAmountToSend?.value[store.bchUnit]){
-        bchSendAmount.value = maxAmountToSend.value[store.bchUnit];
+      if(store.maxAmountToSend?.value && store.maxAmountToSend?.value[store.bchUnit]){
+        bchSendAmount.value = store.maxAmountToSend.value[store.bchUnit];
         setUsdAmount()
       }
       else throw("expected a number");
@@ -83,13 +78,13 @@
     <div v-if="store.network == 'mainnet'" style="font-size: 1.2em">
       USD balance:  
       <span style="color: hsla(160, 100%, 37%, 1);">
-        {{ balance && balance.usd != undefined ? balance.usd + " $": "" }}
+        {{ store.balance && store.balance.usd != undefined ? store.balance.usd + " $": "" }}
       </span>
     </div>
     <span>
       BCH balance:  
       <span style="color: hsla(160, 100%, 37%, 1);">
-        {{ balance && balance[store.bchUnit] != undefined ? balance[store.bchUnit] + displayUnitLong : "" }}
+        {{ store.balance && store.balance[store.bchUnit] != undefined ? store.balance[store.bchUnit] + displayUnitLong : "" }}
       </span>
     </span>
     <span>
