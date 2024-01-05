@@ -221,6 +221,11 @@
         alert(`Minted ${mintAmount} NFTs of category ${displayId}`);
         console.log(`Minted ${mintAmount} immutable NFT of category ${displayId} \n${store.explorerUrl}/tx/${txId}`);
       }
+      // reset input fields
+      displayMintNfts.value = false;
+      mintCommitment.value = "";
+      mintAmountNfts.value = undefined;
+      startingNumberNFTs.value = undefined;
     } catch (error) { alert(error) }
   }
   async function burnNft() {
@@ -308,11 +313,13 @@
           <img id="burnIcon" class="icon" src="/images/fire.svg">
           <span class="hidemobile">burn NFT</span>
         </span>
+      </div>
         <!--<span v-if="tokenData?.auth" style="white-space: nowrap;" id="authButton">
           <img id="authIcon" class="icon" src="/images/shield.svg">
           <span class="hidemobile">auth transfer</span>
           <span class="showmobile">auth</span>
         </span>-->
+      <div>
         <div v-if="displayTokenInfo" style="margin-top: 10px;">
           <div></div>
           <div v-if="tokenMetaData?.description"> {{ tokenMetaData.description }} </div>
@@ -343,7 +350,9 @@
             <div style="display: flex; width: 50%;">
               <span style="width: 100%; position: relative;">
                 <input v-model="tokenSendAmount" id="sendTokenAmount" placeholder="amount">
-                <i id="sendUnit" class="input-icon" style="width: 70px;">{{ tokenMetaData?.token?.symbol ?? "tokens" }}</i>
+                <i id="sendUnit" class="input-icon" style="min-width: 60px; width: min-content; padding-right: 10px;">
+                  {{ tokenMetaData?.token?.symbol ?? "tokens" }}
+                </i>
               </span>
               <button @click="maxTokenAmount()" id="maxButton" style="color: black;">max</button>
             </div>
