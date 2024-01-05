@@ -11,10 +11,9 @@
   const props = defineProps<{
     nftData: UtxoI,
     tokenMetaData: IdentitySnapshot | null,
-    explorerUrl: string
     id: string
   }>()
-  const { nftData, tokenMetaData, explorerUrl, id } = toRefs(props);
+  const { nftData, tokenMetaData, id } = toRefs(props);
 
   const displaySendNft = ref(false);
   const displayNftInfo = ref(false);
@@ -84,7 +83,7 @@
       console.log(tokenCommitment, tokenCapability)
       const displayId = `${tokenId.slice(0, 20)}...${tokenId.slice(-10)}`;
       alert(`Sent NFT of category ${displayId} to ${destinationAddr.value}`);
-      console.log(`Sent NFT of category ${displayId} to ${destinationAddr.value} \n${explorerUrl.value}/tx/${txId}`);
+      console.log(`Sent NFT of category ${displayId} to ${destinationAddr.value} \n${store.explorerUrl}/tx/${txId}`);
       destinationAddr.value = "";
       displaySendNft.value = false;
       await store.updateTokenList(undefined, undefined);
@@ -130,10 +129,10 @@
       const commitmentText= tokenCommitment? `with commitment ${tokenCommitment}`: "";
       if(mintAmount == 1){
         alert(`Minted immutable NFT of category ${displayId} ${commitmentText}`);
-        console.log(`Minted immutable NFT of category ${displayId} ${commitmentText} \n${explorerUrl.value}/tx/${txId}`);
+        console.log(`Minted immutable NFT of category ${displayId} ${commitmentText} \n${store.explorerUrl}/tx/${txId}`);
       } else {
         alert(`Minted ${mintAmount} NFTs of category ${displayId}`);
-        console.log(`Minted ${mintAmount} immutable NFT of category ${displayId} \n${explorerUrl.value}/tx/${txId}`);
+        console.log(`Minted ${mintAmount} immutable NFT of category ${displayId} \n${store.explorerUrl}/tx/${txId}`);
       }
     } catch (error) { alert(error) }
   }
@@ -154,7 +153,7 @@
       );
       const displayId = `${tokenId.slice(0, 20)}...${tokenId.slice(-10)}`;
       alert(`Burned minting NFT of category ${displayId}`);
-      console.log(`Burned minting NFT of category ${displayId} \n${explorerUrl.value}/tx/${txId}`);
+      console.log(`Burned minting NFT of category ${displayId} \n${store.explorerUrl}/tx/${txId}`);
     } catch (error) { alert(error) }
   }
 </script>

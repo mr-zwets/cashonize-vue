@@ -11,11 +11,14 @@ BaseWallet.StorageProvider = IndexedDBProvider;
 
 const defaultChaingraph = "https://gql.chaingraph.pat.mn/v1/graphql";
 const dafaultIpfsGateway = "https://ipfs.io/ipfs/";
+const explorerUrlMainnet = "https://explorer.bitcoinunlimited.info";
+const explorerUrlChipnet = "https://chipnet.chaingraph.cash";
 
 export const useStore = defineStore('store', () => {
   // Wallet State
   const wallet = ref(null as (Wallet |TestNetWallet | null));
   const network = computed(() => wallet.value?.network == "mainnet" ? "mainnet" : "chipnet")
+  let explorerUrl = computed(() => network.value == "mainnet" ? explorerUrlMainnet : explorerUrlChipnet);
   const tokenList = ref(null as (Array<TokenData> | null))
 
   // Global settings
@@ -53,5 +56,5 @@ export const useStore = defineStore('store', () => {
     tokenList.value = arrayTokens;
   }
 
-  return { wallet, network, tokenList, updateTokenList, bchUnit, chaingraph, ipfsGateway, darkMode }
+  return { wallet, network, explorerUrl, tokenList, updateTokenList, bchUnit, chaingraph, ipfsGateway, darkMode }
 })

@@ -69,10 +69,6 @@
     return tokenAmountDecimals;
   })
 
-  const explorerUrlMainnet = "https://explorer.bitcoinunlimited.info";
-  const explorerUrlChipnet = "https://chipnet.chaingraph.cash";
-  let explorerUrl = (store.network == "mainnet")? explorerUrlMainnet : explorerUrlChipnet;
-
   onMounted(() => {
     let icon = createIcon({
       seed: tokenData.value.tokenId,
@@ -118,7 +114,7 @@
         }),
       ]);
       const displayId = `${tokenId.slice(0, 20)}...${tokenId.slice(-10)}`;
-      let message = `Sent ${tokenSendAmount.value} fungible tokens of category ${displayId} to ${destinationAddr.value} \n${explorerUrl}/tx/${txId}`;
+      let message = `Sent ${tokenSendAmount.value} fungible tokens of category ${displayId} to ${destinationAddr.value} \n${store.explorerUrl}/tx/${txId}`;
       alert(message);
       console.log(message);
       tokenSendAmount.value = "";
@@ -148,7 +144,7 @@
       console.log(tokenCommitment, tokenCapability)
       const displayId = `${tokenId.slice(0, 20)}...${tokenId.slice(-10)}`;
       alert(`Sent NFT of category ${displayId} to ${destinationAddr.value}`);
-      console.log(`Sent NFT of category ${displayId} to ${destinationAddr.value} \n${explorerUrl}/tx/${txId}`);
+      console.log(`Sent NFT of category ${displayId} to ${destinationAddr.value} \n${store.explorerUrl}/tx/${txId}`);
       destinationAddr.value = "";
       displaySendNft.value = false;
       await store.updateTokenList(undefined, undefined);
@@ -176,7 +172,7 @@
       const { txId } = await store.wallet.send(outputArray);
       const displayId = `${tokenId.slice(0, 20)}...${tokenId.slice(-10)}`;
       alert(`Sent all NFTs of category ${displayId} to ${destinationAddr.value}`);
-      console.log(`Sent all NFTs of category ${displayId} to ${destinationAddr.value} \n${explorerUrl}/tx/${txId}`);
+      console.log(`Sent all NFTs of category ${displayId} to ${destinationAddr.value} \n${store.explorerUrl}/tx/${txId}`);
       destinationAddr.value = "";
       displaySendAllNfts.value = false;
     } catch(error){
@@ -220,10 +216,10 @@
       const commitmentText= tokenCommitment? `with commitment ${tokenCommitment}`: "";
       if(mintAmount == 1){
         alert(`Minted immutable NFT of category ${displayId} ${commitmentText}`);
-        console.log(`Minted immutable NFT of category ${displayId} ${commitmentText} \n${explorerUrl}/tx/${txId}`);
+        console.log(`Minted immutable NFT of category ${displayId} ${commitmentText} \n${store.explorerUrl}/tx/${txId}`);
       } else {
         alert(`Minted ${mintAmount} NFTs of category ${displayId}`);
-        console.log(`Minted ${mintAmount} immutable NFT of category ${displayId} \n${explorerUrl}/tx/${txId}`);
+        console.log(`Minted ${mintAmount} immutable NFT of category ${displayId} \n${store.explorerUrl}/tx/${txId}`);
       }
     } catch (error) { alert(error) }
   }
@@ -244,7 +240,7 @@
       );
       const displayId = `${tokenId.slice(0, 20)}...${tokenId.slice(-10)}`;
       alert(`Burned minting NFT of category ${displayId}`);
-      console.log(`Burned minting NFT of category ${displayId} \n${explorerUrl}/tx/${txId}`);
+      console.log(`Burned minting NFT of category ${displayId} \n${store.explorerUrl}/tx/${txId}`);
     } catch (error) { alert(error) }
   }
 </script>
@@ -397,7 +393,7 @@
 
     <div v-if="displayChildNfts && (tokenData.nfts?.length ?? 0) > 1">
       <div v-for="(nft, index) in tokenData.nfts" :key="'nft'+tokenData.tokenId.slice(0,4) + index">
-        <nftItem :nftData="nft" :tokenMetaData="tokenMetaData" :explorerUrl="explorerUrl" :id="'nft'+tokenData.tokenId.slice(0,4) + index"/>
+        <nftItem :nftData="nft" :tokenMetaData="tokenMetaData" :id="'nft'+tokenData.tokenId.slice(0,4) + index"/>
       </div>
     </div>
   </div>

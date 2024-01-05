@@ -29,10 +29,6 @@
   const usdSendAmount = ref(undefined as (number | undefined));
   const destinationAddr = ref("");
 
-  const explorerUrlMainnet = "https://explorer.bitcoinunlimited.info";
-  const explorerUrlChipnet = "https://chipnet.chaingraph.cash";
-  let explorerUrl = (store.network == "mainnet")? explorerUrlMainnet : explorerUrlChipnet;
-
   function switchAddressTypeQr(){
     displayeBchQr.value = !displayeBchQr.value;
   }
@@ -71,8 +67,8 @@
       if(!store.wallet) return;
       if(!bchSendAmount.value) throw("No valid amount provided!")
       const { txId } = await store.wallet.send([{ cashaddr: destinationAddr.value, value: bchSendAmount.value, unit: store.bchUnit}]);
-      alert(`Sent ${bchSendAmount.value, displayUnitLong.value} to ${destinationAddr.value} \n${explorerUrl}/tx/${txId}`);
-      console.log(`Sent ${bchSendAmount.value, displayUnitLong.value} to ${destinationAddr.value} \n${explorerUrl}/tx/${txId}`);
+      alert(`Sent ${bchSendAmount.value, displayUnitLong.value} to ${destinationAddr.value} \n${store.explorerUrl}/tx/${txId}`);
+      console.log(`Sent ${bchSendAmount.value, displayUnitLong.value} to ${destinationAddr.value} \n${store.explorerUrl}/tx/${txId}`);
       bchSendAmount.value = undefined;
       destinationAddr.value = "";
     } catch(error){
@@ -118,10 +114,10 @@
     </qr-code>
     <div style="text-align: center;">
       <div id="switchAddress" class="icon" @click="switchAddressTypeQr()"
-        style="font-size: 20px;font-weight: 700;width: fit-content; margin: auto; margin-top: -12px; cursor: pointer;">⇄
+        style="font-size: 20px;font-weight: 700;width: fit-content; margin: auto; margin-top: -5px; cursor: pointer;">⇄
       </div>
     </div>
-    <div style="margin-top: 10px;">
+    <div style="margin-top: 5px;">
       Send BCH:
       <input v-model="destinationAddr" id="destinationAddr" placeholder="address">
       <span class="sendAmountGroup">
