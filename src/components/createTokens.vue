@@ -22,14 +22,20 @@
     <fieldset class="item">
       <legend>Create new tokens</legend>
       <div v-if="balance?.bch === 0" style="color: red;" id="warningNoBCH">Need BCH in wallet to create tokens</div>
-
+      
       <div style="margin-bottom: 1em;">
-        Planned tokenId:
-        <span v-if="!plannedTokenId" id="plannedTokenId">loading...</span>
-        <span v-if="plannedTokenId"> {{`${plannedTokenId.slice(0, 20)}...${plannedTokenId.slice(-10)}`}} </span>
-        <button @click="copyNewTokenId" type="button" style="background: none; padding: 0;">
-          <img class="copyIcon icon" src="/images/copy.svg">
-        </button>
+        <div v-if="plannedTokenId == ''">
+          Currently the wallet does not have any UTXOs capable of token creation. <br>
+          <a style="cursor: pointer;">Click here</a> to prepare a UTXO for token-creation.
+        </div>
+        <div v-else>
+           Planned tokenId:
+          <span v-if="plannedTokenId == undefined" id="plannedTokenId">loading...</span>
+          <span v-if="plannedTokenId"> {{`${plannedTokenId.slice(0, 20)}...${plannedTokenId.slice(-10)}`}} </span>
+          <button @click="copyNewTokenId" type="button" style="background: none; padding: 0;">
+            <img class="copyIcon icon" src="/images/copy.svg">
+          </button>
+        </div> 
       </div>
 
       <label for="newtokens">Select token-type:</label>

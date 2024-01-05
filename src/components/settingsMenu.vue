@@ -7,14 +7,17 @@
   const displayeSeedphrase = ref(false);
   const selectedNetwork = ref(store.network);
   const selectedUnit  = ref(store.bchUnit);
-  const darkmode  = ref(store.darkMode);
-  const emit = defineEmits(['changeUnit','changeNetwork']);
+  const selectedDarkMode  = ref(store.darkMode);
+  const emit = defineEmits(['changeUnit','changeNetwork','changeDarkMode']);
 
   function changeUnit(){
     emit('changeUnit', selectedUnit.value);
   }
   function changeNetwork(){
     emit('changeNetwork', selectedNetwork.value);
+  }
+  function changeDarkMode(){
+    emit('changeDarkMode', selectedDarkMode.value);
   }
   function toggleShowSeedphrase(){
     displayeSeedphrase.value = !displayeSeedphrase.value;
@@ -32,8 +35,8 @@
 <template>
   <fieldset class="item">
     <legend>Settings</legend>
-    <span style="margin-top: 15px;">Dark mode 
-      <Toggle v-model="darkmode" :classes="{container: ''}" style=" vertical-align: middle;toggle-height: 5.25rem; display: inline-block;"/>
+    <span style="margin-top: 15px;">Dark mode
+      <Toggle v-model="selectedDarkMode" @change="changeDarkMode()" style="vertical-align: middle;toggle-height: 5.25rem; display: inline-block;"/>
     </span>
     <div style="margin-top:15px">
       <label for="selectUnit">Select default unit:</label>
@@ -56,7 +59,7 @@
     <div v-if="displayeSeedphrase" id="seedphrase"> {{store.wallet?.mnemonic }}</div>
     <br>
     <span style="margin-top:15px">Derivation path of this wallet is {{store.wallet?.derivationPath }}</span>
-    <div style="margin-top:15px">Removestore.wallet data from browser</div>
+    <div style="margin-top:15px">Remove wallet data from browser</div>
     <input @click="confirmDeleteWallet()" type="button" id="burnNFT" value="Delete wallet" class="button error" style="display: block;">
   </fieldset>
 </template>

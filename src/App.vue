@@ -31,11 +31,13 @@
     // read local storage
     const readNetwork = localStorage.getItem("network");
     const readUnit = localStorage.getItem("unit");
+    const readDarkMode = localStorage.getItem("darkMode");
     // initialise wallet on configured network
     const walletClass = (readNetwork != "chipnet")? Wallet : TestNetWallet;
     const initWallet = await walletClass.named(nameWallet);
     if(readUnit && (readUnit=="bch" || readUnit=="sat")) store.bchUnit = readUnit;
     setWallet(initWallet);
+    if(readDarkMode) document.body.classList.add("dark")
   }
 
   function changeView(newView: number){
@@ -94,6 +96,12 @@
     });
   }
 
+  function changeDarkMode(isDarkMode:boolean){
+    store.darkMode = isDarkMode;
+    localStorage.setItem("darkMode", isDarkMode? "true" : "false");
+    isDarkMode ? document.body.classList.add("dark") : document.body.classList.remove("dark")
+  }
+
   function changeUnit(newUnit: "bch" | "sat"){
     store.bchUnit = newUnit;
     localStorage.setItem("unit", newUnit);
@@ -140,14 +148,15 @@
 
 <template>
   <header>
-    <img src="\images\cashonize-logo.png" style="height: 85px;" >
+    <img :src="store.darkMode? '/images/cashonize-logo-dark.png' : '/images/cashonize-logo.png'" style="height: 85px;" >
     <nav v-if="displayView" style="display: flex; justify-content: center;">
       <div @click="changeView(1)" v-bind:style="displayView == 1 ? {color: 'var(--color-primary'} : ''">BchWallet</div>
       <div @click="changeView(2)" v-bind:style="displayView == 2 ? {color: 'var(--color-primary'} : ''">MyTokens</div>
       <div @click="changeView(3)" v-bind:style="displayView == 3 ? {color: 'var(--color-primary'} : ''">CreateTokens</div>
       <div @click="changeView(4)" v-bind:style="displayView == 4 ? {color: 'var(--color-primary'} : ''">WalletConnect</div>
       <div @click="changeView(5)">
-        <img style="vertical-align: text-bottom;" v-bind:src="displayView == 5 ? 'images/settingsGreen.svg' : 'images/settings.svg'">
+        <img style="vertical-align: text-bottom;" v-bind:src="displayView == 5 ? 'images/settingsGreen.svg' : 
+          store.darkMode? 'images/settingsLightGrey.svg' : 'images/settings.svg'">
       </div>
     </nav>
   </header>
@@ -157,6 +166,6 @@
     <myTokensView v-if="displayView == 2" :nrBcmrRegistries="nrBcmrRegistries"/>
     <createTokensView v-if="displayView == 3" :balance="balance" :plannedTokenId="plannedTokenId"/>
     <connectView v-if="displayView == 4"/>
-    <settingsMenu v-if="displayView == 5" @change-network="(arg) => changeNetwork(arg)" @change-unit="(arg) => changeUnit(arg)"/>
+    <settingsMenu v-if="displayView == 5" @change-network="(arg) => changeNetwork(arg)" @change-unit="(arg) => changeUnit(arg)" @change-dark-mode="(arg) => changeDarkMode(arg)"/>
   </main>
 </template>
