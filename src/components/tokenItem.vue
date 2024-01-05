@@ -34,7 +34,7 @@
   const isSingleNft = computed(() => tokenData.value.nfts?.length == 1);
   const nftMetadata = computed(() => {
     if(isSingleNft.value) return
-    const nftData = tokenData.value.nfts?.[0]
+    const nftData = tokenData.value.nfts?.[0];
     const commitment = nftData?.token?.commitment;
     return tokenMetaData?.value?.token?.nfts?.parse?.types[commitment ?? ""];
   })
@@ -241,6 +241,7 @@
       const displayId = `${tokenId.slice(0, 20)}...${tokenId.slice(-10)}`;
       alert(`Burned minting NFT of category ${displayId}`);
       console.log(`Burned minting NFT of category ${displayId} \n${store.explorerUrl}/tx/${txId}`);
+      await store.updateTokenList(undefined, undefined);
     } catch (error) { alert(error) }
   }
 </script>
@@ -312,13 +313,18 @@
           <span class="hidemobile">auth transfer</span>
           <span class="showmobile">auth</span>
         </span>-->
-        <div v-if="displayTokenInfo" id="tokenInfoDisplay" style="margin-top: 10px;">
-          <div id="tokenBegin"></div>
-          <div v-if="tokenMetaData?.description" id="tokenDescription"> {{ tokenMetaData.description }} </div>
-          <div v-if="tokenData.amount && tokenMetaData" id="tokenDecimals">Number of decimals: {{ tokenMetaData?.token?.decimals ?? 0 }}</div>
-          <div id="tokenCommitment"></div>
-          <div v-if="tokenMetaData?.uris?.web" id="tokenWebLink">
-            Token web link: <a :href="tokenMetaData?.uris?.web" target="_blank">{{ tokenMetaData?.uris?.web }}</a></div>
+        <div v-if="displayTokenInfo" style="margin-top: 10px;">
+          <div></div>
+          <div v-if="tokenMetaData?.description"> {{ tokenMetaData.description }} </div>
+          <div v-if="tokenData.amount && tokenMetaData">
+            Number of decimals: {{ tokenMetaData?.token?.decimals ?? 0 }}
+          </div>
+          <div v-if="isSingleNft">
+            NFT commitment: {{ tokenData.nfts?.[0].token?.commitment ? tokenData.nfts?.[0].token?.commitment : "none" }}
+          </div>
+          <div v-if="tokenMetaData?.uris?.web">
+            Token web link: <a :href="tokenMetaData?.uris?.web" target="_blank">{{ tokenMetaData?.uris?.web }}</a>
+          </div>
           <div id="onchainTokenInfo" style="white-space: pre-line;"></div>
           <details v-if="isSingleNft && nftMetadata?.extensions?.attributes" style="cursor:pointer;">
             <summary>NFT attributes</summary>
@@ -327,6 +333,7 @@
             </div>
           </details>
         </div>
+
         <div v-if="displaySendTokens" id="tokenSend" style="margin-top: 10px;">
           Send these tokens to
           <div class="inputGroup">
