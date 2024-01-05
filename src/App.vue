@@ -27,16 +27,11 @@
   const testnetWalletExists = await TestNetWallet.namedExists(nameWallet);
   const walletExists = mainnetWalletExists || testnetWalletExists;
   if(walletExists){
-    // read local storage
-    const readNetwork = localStorage.getItem("network");
-    const readUnit = localStorage.getItem("unit");
-    const readDarkMode = localStorage.getItem("darkMode");
     // initialise wallet on configured network
+    const readNetwork = localStorage.getItem("network");
     const walletClass = (readNetwork != "chipnet")? Wallet : TestNetWallet;
     const initWallet = await walletClass.named(nameWallet);
-    if(readUnit && (readUnit=="bch" || readUnit=="sat")) store.bchUnit = readUnit;
     setWallet(initWallet);
-    if(readDarkMode) document.body.classList.add("dark")
   }
 
   function changeView(newView: number){

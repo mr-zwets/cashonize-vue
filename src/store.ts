@@ -28,6 +28,15 @@ export const useStore = defineStore('store', () => {
   const ipfsGateway = ref(dafaultIpfsGateway);
   const darkMode  = ref(false);
 
+  // read local storage
+  const readUnit = localStorage.getItem("unit");
+  const readDarkMode = localStorage.getItem("darkMode");
+  if(readUnit && (readUnit=="bch" || readUnit=="sat")) bchUnit.value = readUnit;
+  if(readDarkMode == "true"){
+    document.body.classList.add("dark");
+    darkMode.value = true;
+  }
+
   async function updateTokenList(resultGetFungibleTokens: any, resultGetNFTs: any){
     if(!wallet.value) return // should never happen
     // Option to fetch new tokenlist in advance or not
