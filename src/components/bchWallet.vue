@@ -48,8 +48,8 @@
   }
   async function useMaxBchAmount(){
     try{
-      if(store.maxAmountToSend?.value && store.maxAmountToSend?.value[store.bchUnit]){
-        bchSendAmount.value = store.maxAmountToSend.value[store.bchUnit];
+      if(store.maxAmountToSend && store.maxAmountToSend[store.bchUnit]){
+        bchSendAmount.value = store.maxAmountToSend[store.bchUnit];
         setUsdAmount()
       }
       else throw("expected a number");
