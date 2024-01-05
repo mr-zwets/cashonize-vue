@@ -7,12 +7,15 @@
   import createTokensView from './components/createTokens.vue'
   import { ref, computed } from 'vue'
   import { Wallet, TestNetWallet, BalanceResponse, BCMR, binToHex } from "mainnet-js"
+  import type { CancelWatchFn } from "mainnet-js";
   import { useStore } from './store'
   const store = useStore()
 
   const nameWallet = "mywallet";
   const defaultBcmrIndexer = "https://bcmr.paytaca.com/api";
   const defaultBcmrIndexerChipnet = "https://bcmr-chipnet.paytaca.com/api";
+  let cancelWatchBchtxs: undefined | CancelWatchFn;
+  let cancelWatchTokenTxs: undefined | CancelWatchFn;;
 
   const displayView = ref(undefined as (number | undefined));
   const bcmrIndexer = computed(() => store.network == "mainnet" ? defaultBcmrIndexer : defaultBcmrIndexerChipnet)
@@ -61,11 +64,11 @@
   }
 
   async function setUpWalletSubscriptions(){
-    const cancelWatchBchtxs = store.wallet?.watchBalance(async (newBalance) => {
+    cancelWatchBchtxs = store.wallet?.watchBalance(async (newBalance) => {
       store.balance = newBalance;
       store.maxAmountToSend = await store.wallet?.getMaxAmountToSend();
     });
-    const cancelWatchTokenTxs = store.wallet?.watchAddressTokenTransactions(async(tx) => {
+    cancelWatchTokenTxs = store.wallet?.watchAddressTokenTransactions(async(tx) => {
       if(!store.wallet) return // should never happen
       const walletPkh = binToHex(store.wallet.getPublicKeyHash() as Uint8Array);
       const tokenOutput = tx.vout.find(elem => elem.scriptPubKey.hex.includes(walletPkh));
@@ -86,6 +89,11 @@
   }
 
   async function changeNetwork(newNetwork: "mainnet" | "chipnet"){
+    // cancel active listeners
+    if(cancelWatchBchtxs && cancelWatchTokenTxs){
+      cancelWatchBchtxs()
+      cancelWatchTokenTxs()
+    }
     const walletClass = (newNetwork == "mainnet")? Wallet : TestNetWallet;
     const newWallet = await walletClass.named(nameWallet);
     setWallet(newWallet);
