@@ -15,7 +15,7 @@
   const defaultBcmrIndexer = "https://bcmr.paytaca.com/api";
   const defaultBcmrIndexerChipnet = "https://bcmr-chipnet.paytaca.com/api";
   let cancelWatchBchtxs: undefined | CancelWatchFn;
-  let cancelWatchTokenTxs: undefined | CancelWatchFn;;
+  let cancelWatchTokenTxs: undefined | CancelWatchFn;
 
   const displayView = ref(undefined as (number | undefined));
   const bcmrIndexer = computed(() => store.network == "mainnet" ? defaultBcmrIndexer : defaultBcmrIndexerChipnet)

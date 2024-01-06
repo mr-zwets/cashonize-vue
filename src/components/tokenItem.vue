@@ -1,10 +1,11 @@
 <script setup lang="ts">
-  import { ref, onMounted, toRefs, computed } from 'vue';
+  import { ref, onMounted, toRefs, computed, watch } from 'vue';
   import nftItem from './nftItem.vue'
   import { TokenSendRequest, TokenMintRequest, BCMR } from "mainnet-js"
   // @ts-ignore
   import { createIcon } from '@download/blockies';
   import type { TokenData } from "../interfaces/interfaces"
+  import { queryTotalSupplyFT, querySupplyNFTs, queryActiveMinting } from "../queryChainGraph"
   import type { IdentitySnapshot } from "mainnet-js"
   import { useStore } from '../store'
   const store = useStore()
@@ -28,6 +29,9 @@
   const mintCommitment = ref("");
   const mintAmountNfts = ref(undefined as string | undefined);
   const startingNumberNFTs = ref(undefined as string | undefined);
+  const totalSupplyFT = ref(undefined as bigint | undefined);
+  const totalNumberNFTs = ref(undefined as number | undefined);
+  const hasMintingNFT = ref(undefined as boolean | undefined);
 
   tokenMetaData.value = BCMR.getTokenInfo(tokenData.value.tokenId) ?? null;
 
@@ -61,13 +65,12 @@
     }
     return tokenName;
   })
-  const tokenAmountDecimals = computed(() => {
-    if(!tokenData.value?.amount) return
-    let tokenAmountDecimals: bigint|number = tokenData.value?.amount;
+  const toAmountDecimals = (amount:bigint) => {
+    let tokenAmountDecimals: bigint|number = amount;
     const decimals = tokenMetaData.value?.token?.decimals;
     if(decimals) tokenAmountDecimals = Number(tokenAmountDecimals) / (10 ** decimals);
     return tokenAmountDecimals;
-  })
+  }
 
   onMounted(() => {
     let icon = createIcon({
@@ -85,6 +88,19 @@
   function copyTokenId(){
     navigator.clipboard.writeText(tokenData.value.tokenId);
   }
+
+  // check if need to fetch onchain stats on displayTokenInfo
+  watch(displayTokenInfo, async() => {
+    if(!totalSupplyFT.value && tokenData.value?.amount){
+      totalSupplyFT.value = await queryTotalSupplyFT(tokenData.value.tokenId, store.chaingraph);
+    }
+    if(!totalNumberNFTs.value && tokenData.value?.nfts && hasMintingNFT.value == undefined){
+      const supplyNFTs = await querySupplyNFTs(tokenData.value.tokenId, store.chaingraph);
+      const resultHasMintingNft = await queryActiveMinting(tokenData.value.tokenId, store.chaingraph);
+      totalNumberNFTs.value = supplyNFTs;
+      hasMintingNFT.value = resultHasMintingNft;
+    }
+  })
 
   async function maxTokenAmount(){
     try{
@@ -284,7 +300,7 @@
             <div id="childNftCommitment" style="word-break: break-all;" class="hide"></div>
           </div>
           <div v-if="tokenData?.amount" class="tokenAmount" id="tokenAmount">Token amount: 
-            {{ tokenAmountDecimals }} {{ tokenMetaData?.token?.symbol }}
+            {{ toAmountDecimals(tokenData?.amount) }} {{ tokenMetaData?.token?.symbol }}
           </div>
           <div v-if="(tokenData.nfts?.length ?? 0) > 1" @click="displayChildNfts = !displayChildNfts" class="showChildNfts">
             <span class="nrChildNfts" id="nrChildNfts">Number NFTs: {{ tokenData.nfts?.length }}</span>
@@ -332,7 +348,18 @@
           <div v-if="tokenMetaData?.uris?.web">
             Token web link: <a :href="tokenMetaData?.uris?.web" target="_blank">{{ tokenMetaData?.uris?.web }}</a>
           </div>
-          <div id="onchainTokenInfo" style="white-space: pre-line;"></div>
+          <div v-if="tokenData.amount">
+            Genesis supply: {{ totalSupplyFT? 
+              (tokenMetaData?.token?.symbol ? toAmountDecimals(totalSupplyFT) + " " + tokenMetaData?.token?.symbol
+              : totalSupplyFT + " tokens") : "..."
+            }}
+          </div>
+          <div v-if="tokenData?.nfts?.length">
+            Total supply NFTs: {{ totalNumberNFTs? totalNumberNFTs: "..."}}
+          </div>
+          <div v-if="tokenData?.nfts?.length">
+            Has active minting NFT: {{ hasMintingNFT == undefined? "..." :( hasMintingNFT? "yes": "no")}}
+          </div>
           <details v-if="isSingleNft && nftMetadata?.extensions?.attributes" style="cursor:pointer;">
             <summary>NFT attributes</summary>
             <div v-for="(attributeValue, attributeKey) in nftMetadata?.extensions?.attributes" :key="((attributeValue as string) + (attributeValue as string))" style="white-space: pre-wrap;">
@@ -350,7 +377,7 @@
             <div style="display: flex; width: 50%;">
               <span style="width: 100%; position: relative;">
                 <input v-model="tokenSendAmount" id="sendTokenAmount" placeholder="amount">
-                <i id="sendUnit" class="input-icon" style="min-width: 60px; width: min-content; padding-right: 10px;">
+                <i id="sendUnit" class="input-icon" style="width: min-content; padding-right: 15px;">
                   {{ tokenMetaData?.token?.symbol ?? "tokens" }}
                 </i>
               </span>
