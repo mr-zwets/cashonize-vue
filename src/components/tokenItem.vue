@@ -65,12 +65,6 @@
     }
     return tokenName;
   })
-  const toAmountDecimals = (amount:bigint) => {
-    let tokenAmountDecimals: bigint|number = amount;
-    const decimals = tokenMetaData.value?.token?.decimals;
-    if(decimals) tokenAmountDecimals = Number(tokenAmountDecimals) / (10 ** decimals);
-    return tokenAmountDecimals;
-  }
 
   onMounted(() => {
     let icon = createIcon({
@@ -101,7 +95,14 @@
       hasMintingNFT.value = resultHasMintingNft;
     }
   })
-
+  
+  // Fungible token specific functionality
+  function toAmountDecimals(amount:bigint){
+    let tokenAmountDecimals: bigint|number = amount;
+    const decimals = tokenMetaData.value?.token?.decimals;
+    if(decimals) tokenAmountDecimals = Number(tokenAmountDecimals) / (10 ** decimals);
+    return tokenAmountDecimals;
+  }
   async function maxTokenAmount(){
     try{
       if(!tokenData.value?.amount) return // should never happen
@@ -142,32 +143,7 @@
       alert(error);
     }
   }
-  async function sendNft(){
-    try{
-      if(!store.wallet) return;
-      const tokenId = tokenData.value.tokenId;
-      const nftInfo = tokenData.value.nfts?.[0].token;
-      const tokenCommitment = nftInfo?.commitment;
-      const tokenCapability = nftInfo?.capability;
-      const { txId } = await store.wallet.send([
-        new TokenSendRequest({
-          cashaddr: destinationAddr.value,
-          tokenId: tokenId,
-          commitment: tokenCommitment,
-          capability: tokenCapability,
-        }),
-      ]);
-      console.log(tokenCommitment, tokenCapability)
-      const displayId = `${tokenId.slice(0, 20)}...${tokenId.slice(-10)}`;
-      alert(`Sent NFT of category ${displayId} to ${destinationAddr.value}`);
-      console.log(`Sent NFT of category ${displayId} to ${destinationAddr.value} \n${store.explorerUrl}/tx/${txId}`);
-      destinationAddr.value = "";
-      displaySendNft.value = false;
-      await store.updateTokenList(undefined, undefined);
-    } catch(error){
-      console.log(error)
-    }
-  }
+  // NFT Group specific functionality
   async function sendAllNfts(){
     try{
       if(!store.wallet) return;
@@ -191,6 +167,33 @@
       console.log(`Sent all NFTs of category ${displayId} to ${destinationAddr.value} \n${store.explorerUrl}/tx/${txId}`);
       destinationAddr.value = "";
       displaySendAllNfts.value = false;
+    } catch(error){
+      console.log(error)
+    }
+  }
+  // single NFT specific functionality
+  async function sendNft(){
+    try{
+      if(!store.wallet) return;
+      const tokenId = tokenData.value.tokenId;
+      const nftInfo = tokenData.value.nfts?.[0].token;
+      const tokenCommitment = nftInfo?.commitment;
+      const tokenCapability = nftInfo?.capability;
+      const { txId } = await store.wallet.send([
+        new TokenSendRequest({
+          cashaddr: destinationAddr.value,
+          tokenId: tokenId,
+          commitment: tokenCommitment,
+          capability: tokenCapability,
+        }),
+      ]);
+      console.log(tokenCommitment, tokenCapability)
+      const displayId = `${tokenId.slice(0, 20)}...${tokenId.slice(-10)}`;
+      alert(`Sent NFT of category ${displayId} to ${destinationAddr.value}`);
+      console.log(`Sent NFT of category ${displayId} to ${destinationAddr.value} \n${store.explorerUrl}/tx/${txId}`);
+      destinationAddr.value = "";
+      displaySendNft.value = false;
+      await store.updateTokenList(undefined, undefined);
     } catch(error){
       console.log(error)
     }
