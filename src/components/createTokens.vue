@@ -5,7 +5,7 @@
 
   const selectedTokenType = ref("-select-");
   const inputFungibleSupply = ref("");
-  const inputCommitment = ref("")
+  const selectedUri = ref("-select-");
   const displayPlannedTokenId = computed(() => store.plannedTokenId? `${store.plannedTokenId.slice(0, 20)}...${store.plannedTokenId.slice(-10)}`:"");
 
   function copyNewTokenId(){
@@ -84,37 +84,17 @@
       console.log(error)
     }
   }
-  async function createImmutibleNFT(){
-    if(!store.wallet) return;
-    const isHex = (str:string) => /^[A-F0-9]+$/i.test(str);
-      if(!isHex(inputCommitment.value)){ alert(`Input commitment must only contain hexadecimal characters`); return }
-    try{
-      const genesisResponse = await store.wallet.tokenGenesis(
-        {
-          cashaddr: store.wallet.tokenaddr,
-          commitment: inputCommitment.value,
-          capability: "none",
-          value: 1000,
-        }
-      );
-      const tokenId = genesisResponse?.tokenIds?.[0];
-      const { txId } = genesisResponse;
-      alert(`Created an immutable NFT with commitment ${inputCommitment.value} and category ${tokenId}`);
-      console.log(`Created an immutable NFT with commitment ${inputCommitment.value} and category ${tokenId} \n${store.explorerUrl}/tx/${txId}`);
-      // reset input fields
-      inputFungibleSupply.value = "";
-      inputCommitment.value  = "-select-";
-      hasPreGenesis();
-    } catch(error){
-      console.log(error)
-    }
-  }
 </script>
 
 <template>
   <div>
     <fieldset class="item">
       <legend>Create new tokens</legend>
+      <div>
+        You can use the <a :href="store.network == 'mainnet'? 'https://cashtokens.studio/': 'https://chipnet.cashtokens.studio/'" target="_blank">CashTokens Studio</a> 
+        for the easiest token creation, or you can use the built-in process below for fine-grained control. <br><br>
+      </div>
+
       <div v-if="store.balance?.bch === 0" style="color: red;" id="warningNoBCH">Need BCH in wallet to create tokens</div>
       <div style="margin-bottom: 1em;">
         <div v-if="store.plannedTokenId == ''">
@@ -132,33 +112,73 @@
       </div>
 
       <label for="newtokens">Select token-type:</label>
-      <select name="newtokens" id="newtokens"  v-model="selectedTokenType">
+      <select name="newtokens" id="newtokens"  v-model="selectedTokenType" :disabled="!store.plannedTokenId">
         <option autocomplete="off" selected value="-select-">-select-</option>
         <option autocomplete="off" value="fungibles">Fungible Tokens</option>
         <option autocomplete="off" value="mintingNFT">Minting NFT</option>
-        <option autocomplete="off" value="immutableNFT">Immutable NFT</option>
       </select>
       <br>
       <div v-if="selectedTokenType == '-select-'">
         <b>Fungible Tokens</b> is used to create interchangeable tokens. The total supply of fungible tokens needs to be
         determined at creation. <br>
         <b>Minting NFT</b> is used to create an NFT collection. The minting NFT has the ability to mint new NFTs with the
-        same tokenId. <br>
-        <b>Immutable NFT</b> is used to create a one-off NFT. There is no option to create more NFTs of the same kind.
+        same tokenId.
         <br><br>
       </div>
-      <div v-if="selectedTokenType == 'fungibles'">
-        Choose the total supply of fungible tokens
-        <input v-model="inputFungibleSupply" placeholder="total supply" type="number"> <br>
-        Process might take a few seconds... <input @click="createFungibles" type="button" class="primaryButton" value="Create" style="margin-top: 8px;">
-      </div>
-      <div v-if="selectedTokenType == 'mintingNFT'">
-        Process might take a few seconds... <input @click="createMintingNFT" type="button" class="primaryButton" value="Create" style="margin-top: 8px;">
-      </div>
-      <div v-if="selectedTokenType == 'immutableNFT'">
-        Add immutable commitment data to add to this NFT (hexadecimals only) 
-        <input v-model="inputCommitment" placeholder="commitment"> <br>
-        Process might take a few seconds... <input @click="createImmutibleNFT" type="button" class="primaryButton" value="Create" style="margin-top: 8px;">
+      <div v-if="selectedTokenType != '-select-'">
+        <div v-if="selectedTokenType == 'fungibles'">
+          Choose the total supply of fungible tokens
+          <input v-model="inputFungibleSupply" placeholder="total supply" type="number"> <br>
+        </div>
+
+        <details  style="margin-bottom: 0.5em;">
+          <summary>Link Token-Metadata</summary>
+          To add metadata to your token you need to upload the token image(s), create a JSON file following the 
+          <a href="https://github.com/bitjson/chip-bcmr" target="_blank">BCMR-standard</a>, upload it somewhere and then post that link on-chain. <br><br>
+    
+          <label for="selectUri">Select where to upload your metadata (IPFS recommended): </label>
+          <select name="selectUri" v-model="selectedUri">
+            <option value="-select-">- select -</option>
+            <option value="IPFS">IPFS</option>
+            <option value="website">HTTPS: own website</option>
+            <option value="github">HTTPS: github gist</option>
+          </select>
+          <div v-if="selectedUri == 'github'">
+            If you have a GitHub account and know how to use git, you can easily host your BCMR on Github Gist, similar to 
+              <a href="https://gist.github.com/mr-zwets/84b0057808af20df392815fb27d4a661" target="_blank">DogeCash</a>. <br>
+            1) First add the static images like token icon and image to your gist by following <a href="https://gist.github.com/mroderick/1afdd71aa69f6b29601d335751a1a9be" target="_blank">these steps</a> or upload them to IPFS.<br>
+            2) Then you can create the BCMR JSON file with the <a href="https://bcmr-generator.netlify.app/" target="_blank">BCMR generator</a> or
+              with the <a href="https://github.com/bitjson/chip-bcmr/blob/master/bcmr-v2.schema.ts" target="_blank">BCMR-schema</a>.<br>
+            3) Add the JSON file to your github gist.<br>
+            4) Then press the "raw" button on your Github Gist and copy the url until <code>/raw</code> below. <br>
+            The BCMR location together with the hash of its content will be stored on the blockchain.
+            <input id="bcmrUrlGithub" placeholder="gist.githubusercontent.com/mr-zwets/323c7786e2acf01e3c04a440d7cf6c2c/raw">
+          </div>
+          <div v-if="selectedUri == 'website'">
+            1) First host the static images like token icon and image on your website or on IPFS.<br>
+            2) Then you can create the BCMR JSON file with the <a href="https://bcmr-generator.netlify.app/" target="_blank">BCMR generator</a> or
+              with the <a href="https://github.com/bitjson/chip-bcmr/blob/master/bcmr-v2.schema.ts" target="_blank">BCMR-schema</a>.<br>
+            3) To host the JSON file on your own website, the recommended location for it is <code>/.well-known/bitcoin-cash-metadata-registry.json</code> 
+                like <a href="https://otr.cash/.well-known/bitcoin-cash-metadata-registry.json" target="_blank">the OTR registry</a> does. <br>
+            4) Enter the base url of your website (like 'yourtokenwebsite.com') below.  <br>
+            The BCMR location together with the hash of its content will be stored on the blockchain.
+            <input id="bcmrUrlWebsite" placeholder="yourtokenwebsite.com">
+          </div>
+          <div v-if="selectedUri == 'IPFS'">
+            1) First upload (pin) your tokenIcon on IPFS which can be done easily with <a href="https://nft.storage/" target="_blank">nft.storage</a>. <br>
+            To upload multiple images grouped together on IPFS use their <a href="https://nft.storage/docs/how-to/nftup/" target="_blank">NFT UP</a> tool. <br>
+            2) Then, you can create the BCMR JSON file with the <a href="https://bcmr-generator.netlify.app/" target="_blank">BCMR generator</a> or
+              with the <a href="https://github.com/bitjson/chip-bcmr/blob/master/bcmr-v2.schema.ts" target="_blank">BCMR-schema</a>.<br>
+            3) Upload the BCMR JSON file to ipfs with <a href="https://nft.storage/" target="_blank">nft.storage</a>.<br>
+            4) Enter the IPFS location of your BCMR json file (version 1 CID starting with <code>baf...</code>) below. <br>
+            The BCMR location together with the hash of its content will be stored on the blockchain.
+            <input id="bcmrIpfs" placeholder="bafkreiaqpmlrtsdf5cvwgh46mpyric2r44ikqzqgtevny74qdmrjc5dkxy">
+          </div><br>
+          <b>Vailidity check for on-chain link: {{ '❌' }}</b>
+        </details><br>
+        <b>Note:</b> Token metadata can still be added/updated after creation with the token's AuthUTXO.
+        That's why the AuthUTXO should be transferred to a dedicated wallet right after creation.<br><br>
+        Process might take a few seconds... <input @click="selectedTokenType == 'fungibles' ? createMintingNFT : createFungibles" type="button" class="primaryButton" value="Create" style="margin-top: 8px;">
       </div>
     </fieldset>
 </div></template>
