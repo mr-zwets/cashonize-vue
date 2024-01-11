@@ -1,11 +1,14 @@
 <script setup lang="ts">
   import { ref, computed } from 'vue';
+  import { OpReturnData, sha256, utf8ToBin } from "mainnet-js"
   import { useStore } from '../store'
   const store = useStore()
 
   const selectedTokenType = ref("-select-");
   const inputFungibleSupply = ref("");
   const selectedUri = ref("-select-");
+  const inputBcmr = ref("");
+  const validitityCheck = ref(false);
   const displayPlannedTokenId = computed(() => store.plannedTokenId? `${store.plannedTokenId.slice(0, 20)}...${store.plannedTokenId.slice(-10)}`:"");
 
   function copyNewTokenId(){
@@ -32,6 +35,27 @@
       console.log(error)
     }
   }
+
+  async function getOpreturnData(){
+    const inputField = inputBcmr.value;
+    let validinput = selectedUri.value != "IPFS"? !inputField.startsWith("http"): inputField.startsWith("ipfs://baf");
+    if(!validinput){
+      selectedUri.value != "IPFS" ? alert("Urls should not have any prefix!") : alert("Ipfs location should be a v1 CID");
+      return
+    }
+    const defaultBcmrLocation = "/.well-known/bitcoin-cash-metadata-registry.json"
+    const bcmrLocation = (selectedUri.value === "website" && !inputField.endsWith(".json"))? defaultBcmrLocation : ""
+    const fetchLocation = selectedUri.value != "IPFS" ? "https://" + inputField + bcmrLocation : inputField + inputField.slice(7);
+    try{
+      console.log("fetching bcmr at "+fetchLocation);
+      const response = await fetch(fetchLocation);
+      if(response?.status == 200) validitityCheck.value = true;
+      const bcmrContent = await response.text();
+      const hashContent = sha256.hash(utf8ToBin(bcmrContent));
+      const chunks = ["BCMR", hashContent, inputField];
+      return OpReturnData.fromArray(chunks);
+    } catch (error) {validitityCheck.value = false;}
+  }
   
   async function createFungibles(){
     if(!store.wallet) return;
@@ -43,12 +67,14 @@
     if(!validInput){ alert(`Input total supply must be a valid integer`); return }
     try{
       const totalSupply = inputFungibleSupply.value;
+      let opreturnData = await getOpreturnData();
       const genesisResponse = await store.wallet.tokenGenesis(
         {
           cashaddr: store.wallet.tokenaddr,
           amount: BigInt(totalSupply),    // fungible token amount
           value: 1000,                    // Satoshi value
-        }
+        }, 
+        opreturnData
       );
       const tokenId = genesisResponse?.tokenIds?.[0];
       const { txId } = genesisResponse;
@@ -65,13 +91,15 @@
   async function createMintingNFT(){
     if(!store.wallet) return;
     try{
+      let opreturnData = await getOpreturnData();
       const genesisResponse = await store.wallet.tokenGenesis(
         {
           cashaddr: store.wallet.tokenaddr,
           commitment: "",
           capability: "minting",
           value: 1000,
-        }
+        }, 
+        opreturnData
       );
       const tokenId = genesisResponse?.tokenIds?.[0];
       const { txId } = genesisResponse;
@@ -152,7 +180,7 @@
             3) Add the JSON file to your github gist.<br>
             4) Then press the "raw" button on your Github Gist and copy the url until <code>/raw</code> below. <br>
             The BCMR location together with the hash of its content will be stored on the blockchain.
-            <input id="bcmrUrlGithub" placeholder="gist.githubusercontent.com/mr-zwets/323c7786e2acf01e3c04a440d7cf6c2c/raw">
+            <input v-model="inputBcmr" @input="getOpreturnData" placeholder="gist.githubusercontent.com/mr-zwets/323c7786e2acf01e3c04a440d7cf6c2c/raw">
           </div>
           <div v-if="selectedUri == 'website'">
             1) First host the static images like token icon and image on your website or on IPFS.<br>
@@ -162,7 +190,7 @@
                 like <a href="https://otr.cash/.well-known/bitcoin-cash-metadata-registry.json" target="_blank">the OTR registry</a> does. <br>
             4) Enter the base url of your website (like 'yourtokenwebsite.com') below.  <br>
             The BCMR location together with the hash of its content will be stored on the blockchain.
-            <input id="bcmrUrlWebsite" placeholder="yourtokenwebsite.com">
+            <input v-model="inputBcmr" @input="getOpreturnData" placeholder="yourtokenwebsite.com">
           </div>
           <div v-if="selectedUri == 'IPFS'">
             1) First upload (pin) your tokenIcon on IPFS which can be done easily with <a href="https://nft.storage/" target="_blank">nft.storage</a>. <br>
@@ -172,9 +200,9 @@
             3) Upload the BCMR JSON file to ipfs with <a href="https://nft.storage/" target="_blank">nft.storage</a>.<br>
             4) Enter the IPFS location of your BCMR json file (version 1 CID starting with <code>baf...</code>) below. <br>
             The BCMR location together with the hash of its content will be stored on the blockchain.
-            <input id="bcmrIpfs" placeholder="bafkreiaqpmlrtsdf5cvwgh46mpyric2r44ikqzqgtevny74qdmrjc5dkxy">
+            <input v-model="inputBcmr" @input="getOpreturnData" placeholder="bafkreiaqpmlrtsdf5cvwgh46mpyric2r44ikqzqgtevny74qdmrjc5dkxy">
           </div><br>
-          <b>Vailidity check for on-chain link: {{ '❌' }}</b>
+          <b>Validity check metadata: {{ validitityCheck? '✅':'❌' }}</b>
         </details><br>
         <b>Note:</b> Token metadata can still be added/updated after creation with the token's AuthUTXO.
         That's why the AuthUTXO should be transferred to a dedicated wallet right after creation.<br><br>
