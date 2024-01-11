@@ -308,7 +308,8 @@
           <div v-if="(tokenData.nfts?.length ?? 0) > 1" @click="displayChildNfts = !displayChildNfts" class="showChildNfts">
             <span class="nrChildNfts" id="nrChildNfts">Number NFTs: {{ tokenData.nfts?.length }}</span>
             <span class="hide" id="showMore" style="margin-left: 10px;">
-              <img class="icon" :src="displayChildNfts? '/images/chevron-square-up.svg':'/images/chevron-square-down.svg'">
+              <img class="icon" :src="store.darkMode? (displayChildNfts? '/images/chevron-square-up-lightGrey.svg':'/images/chevron-square-down-lightGrey.svg') : 
+                (displayChildNfts? '/images/chevron-square-up.svg':'/images/chevron-square-down.svg')">
             </span>
           </div>
 
@@ -317,19 +318,19 @@
 
       <div class="actionBar">
         <span v-if="!tokenData?.nfts" @click="displaySendTokens = !displaySendTokens" style="margin-left: 10px;">
-          <img id="sendIcon" class="icon" src="/images/send.svg"> send </span>
+          <img id="sendIcon" class="icon" :src="store.darkMode? '/images/sendLightGrey.svg' : '/images/send.svg'"> send </span>
         <span v-if="tokenData?.nfts?.length == 1" @click="displaySendNft = !displaySendNft" style="margin-left: 10px;">
-          <img id="sendIcon" class="icon" src="/images/send.svg"> send </span>
+          <img id="sendIcon" class="icon" :src="store.darkMode? '/images/sendLightGrey.svg' : '/images/send.svg'"> send </span>
         <span @click="displayTokenInfo = !displayTokenInfo" id="infoButton">
-          <img id="infoIcon" class="icon" src="/images/info.svg"> info
+          <img id="infoIcon" class="icon" :src="store.darkMode? '/images/infoLightGrey.svg' : '/images/info.svg'"> info
         </span>
         <span v-if="(tokenData.nfts?.length ?? 0) > 1" @click="displaySendAllNfts = !displaySendAllNfts" style="margin-left: 10px;">
-          <img id="sendIcon" class="icon" src="/images/send.svg"> transfer all </span>
+          <img id="sendIcon" class="icon" :src="store.darkMode? '/images/sendLightGrey.svg' : '/images/send.svg'"> transfer all </span>
         <span v-if="isSingleNft && tokenData?.nfts?.[0]?.token?.capability == 'minting'" @click="displayMintNfts = !displayMintNfts">
-          <img id="mintIcon" class="icon" src="/images/hammer.svg"> mint NFTs
+          <img id="mintIcon" class="icon" :src="store.darkMode? '/images/hammerLightGrey.svg' : '/images/hammer.svg'"> mint NFTs
         </span>
         <span v-if="isSingleNft && tokenData?.nfts?.[0]?.token?.capability == 'minting'" @click="displayBurnNft = !displayBurnNft" style="white-space: nowrap;">
-          <img id="burnIcon" class="icon" src="/images/fire.svg">
+          <img id="burnIcon" class="icon" :src="store.darkMode? '/images/fireLightGrey.svg' : '/images/fire.svg'">
           <span class="hidemobile">burn NFT</span>
         </span>
       </div>
