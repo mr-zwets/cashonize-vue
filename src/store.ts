@@ -30,6 +30,7 @@ export const useStore = defineStore('store', () => {
   const chaingraph = ref(defaultChaingraph);
   const ipfsGateway = ref(dafaultIpfsGateway);
   const darkMode  = ref(false);
+  const autoApprove = ref(['wc_authRequest', 'bch_getTokens_V0', 'bch_getBalance_V0', 'bch_getChangeLockingBytecode_V0'])
 
   // read local storage
   const readUnit = localStorage.getItem("unit");
@@ -69,5 +70,5 @@ export const useStore = defineStore('store', () => {
     tokenList.value = arrayTokens;
   }
 
-  return { wallet, balance, maxAmountToSend, network, explorerUrl, tokenList, updateTokenList, plannedTokenId, nrBcmrRegistries, bchUnit, chaingraph, ipfsGateway, darkMode }
+  return { wallet, balance, maxAmountToSend, network, explorerUrl, tokenList, updateTokenList, plannedTokenId, nrBcmrRegistries, bchUnit, chaingraph, ipfsGateway, darkMode, autoApprove }
 })

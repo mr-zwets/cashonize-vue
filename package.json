@@ -12,10 +12,12 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@bitauth/libauth": "^2.0.0-alpha.8",
     "@bitjson/qr-code": "^1.0.2",
     "@download/blockies": "^1.0.3",
     "@mainnet-cash/indexeddb-storage": "^2.2.7",
     "@vueform/toggle": "^2.1.4",
+    "cashconnect": "^0.0.10",
     "chota": "^0.9.2",
     "mainnet-js": "^2.3.0",
     "pinia": "^2.1.7",
